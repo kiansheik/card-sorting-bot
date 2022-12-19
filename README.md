@@ -3,7 +3,7 @@ This is an attempt to build my own card sorting robot for MTG. All of the ones I
 
 The robot will operate like a 3d printer with a matrix of card stacks facing up. The cursor of the 3d printer will be fitted with a camera and vacuum so that it can pop and push amongst the stacks. this is just theory but I have seen similar robots made before.
 
-Here is the sample output of the sorting algorithm:
+Here is the sample output of the sorting algorithm given a full robot (1,475 cards):
 
 ```
 Sorted 1475 items in 25 stacks with 59 elements per stack and a swap of 25 Stacks (50 total) in 62190 moves O(43n) (103327/79961  Uncached/Cached reads)
