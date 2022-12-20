@@ -1,0 +1,2074 @@
+{
+  "settings": {
+    "feedSpeed": 100,
+    "plungeSpeed": 100,
+    "toolDiameter": 3.0,
+    "stockThickness": 10.0,
+    "safeHeight": 5.0,
+    "preferredUnits": "MM",
+    "toolStepOver": 0.3,
+    "depthPerPass": 1.0,
+    "spindleSpeed": 0.0
+  },
+  "entities": [
+    {
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.5659090909090908,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 33.2,
+        "m02": 115.17045454545455,
+        "m12": 10.0
+      },
+      "name": "vert 1",
+      "type": "RECTANGLE"
+    },
+    {
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 43.199999999999996,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.5671772428884029,
+        "m02": 12.5,
+        "m12": 256.0
+      },
+      "name": "hor 1",
+      "type": "RECTANGLE"
+    },
+    {
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 43.199999999999996,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.5671772428884027,
+        "m02": 12.5,
+        "m12": 173.0
+      },
+      "name": "hor 2",
+      "type": "RECTANGLE"
+    },
+    {
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 43.199999999999996,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.5671772428884027,
+        "m02": 12.5,
+        "m12": 90.0
+      },
+      "name": "hor 3",
+      "type": "RECTANGLE"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              20.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              20.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "bottom row",
+      "type": "PATH"
+    },
+    {
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.5659090909090908,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 33.2,
+        "m02": 223.17045454545456,
+        "m12": 10.0
+      },
+      "name": "vert 2",
+      "type": "RECTANGLE"
+    },
+    {
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.5659090909090908,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 33.2,
+        "m02": 331.17045454545456,
+        "m12": 10.0
+      },
+      "name": "vert 3",
+      "type": "RECTANGLE"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              128.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              128.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              236.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              236.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              344.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              344.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              20.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              20.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              20.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636365,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636367,
+        "m02": 56.72727272727273,
+        "m12": 45.647727272727266
+      },
+      "name": "bottom row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              128.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              128.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              128.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636348,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.1136363636363635,
+        "m02": 152.45454545454547,
+        "m12": 45.64772727272728
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              236.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              236.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              236.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636365,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636367,
+        "m02": 248.1818181818182,
+        "m12": 45.647727272727266
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              344.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              344.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              83.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              344.0,
+              20.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636365,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636367,
+        "m02": 343.9090909090909,
+        "m12": 45.647727272727266
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              20.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              20.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              20.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636365,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636365,
+        "m02": 56.72727272727273,
+        "m12": 119.2159090909091
+      },
+      "name": "second row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              20.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              20.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "second row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              128.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              128.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              128.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              128.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              128.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636348,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636348,
+        "m02": 152.45454545454547,
+        "m12": 119.21590909090911
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              236.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              236.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              236.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              236.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              236.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636365,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636365,
+        "m02": 248.1818181818182,
+        "m12": 119.2159090909091
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              344.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              344.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              344.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              344.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              166.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              344.0,
+              103.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636365,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636365,
+        "m02": 343.9090909090909,
+        "m12": 119.2159090909091
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              20.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              20.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              20.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636365,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636365,
+        "m02": 56.72727272727273,
+        "m12": 192.7840909090909
+      },
+      "name": "third row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              20.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              20.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "third row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              128.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              128.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              128.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636348,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636348,
+        "m02": 152.45454545454547,
+        "m12": 192.78409090909096
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              128.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              128.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              236.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              236.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              236.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636365,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636365,
+        "m02": 248.1818181818182,
+        "m12": 192.7840909090909
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              236.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              236.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              344.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              344.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              344.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              344.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              249.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              344.0,
+              186.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636365,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636365,
+        "m02": 343.9090909090909,
+        "m12": 192.7840909090909
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              20.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              20.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              20.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636362,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636365,
+        "m02": 56.727272727272734,
+        "m12": 266.35227272727275
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              20.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              20.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              108.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              128.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              128.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              128.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              128.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              216.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              128.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636348,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636348,
+        "m02": 152.45454545454547,
+        "m12": 266.35227272727275
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              236.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              236.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              236.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              236.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              324.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              236.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636365,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636365,
+        "m02": 248.1818181818182,
+        "m12": 266.3522727272727
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              344.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              344.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 1.0,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 1.0,
+        "m02": 0.0,
+        "m12": 0.0
+      },
+      "name": "top row",
+      "type": "PATH"
+    },
+    {
+      "segments": [
+        {
+          "type": "MOVE_TO",
+          "coordinates": [
+            [
+              344.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              344.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              332.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              432.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "LINE_TO",
+          "coordinates": [
+            [
+              344.0,
+              269.0
+            ]
+          ]
+        },
+        {
+          "type": "CLOSE",
+          "coordinates": []
+        }
+      ],
+      "startDepth": 0.0,
+      "cutDepth": 0.2,
+      "cutType": "ON_PATH",
+      "transform": {
+        "m00": 0.11363636363636365,
+        "m10": 0.0,
+        "m01": 0.0,
+        "m11": 0.11363636363636365,
+        "m02": 343.9090909090909,
+        "m12": 266.3522727272727
+      },
+      "name": "top row",
+      "type": "PATH"
+    }
+  ],
+  "version": "1"
+}
