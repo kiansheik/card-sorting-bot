@@ -1,5 +1,6 @@
 import random
 from math import ceil, sqrt, floor
+from functools import cmp_to_key
 
 MOVE_DURATION = 5
 READ_DURATION = 2
@@ -27,7 +28,7 @@ class Stack:
     # Must check `is_empty()` before calling `read_top_element()`
     def read_top_element(self):
         if self.is_empty():
-            return None
+            raise ValueError("Stack empty!")
         return self.elements[-1]
 
     def is_empty(self):
@@ -79,6 +80,9 @@ class StackGroup(Stack):
         for stack in self.stacks:
             elems += stack.get_elements()
         return elems
+
+    def size(self):
+        return len(self.stacks)
 
     def in_group(self, ig=None):
         if ig is None:
@@ -229,6 +233,17 @@ class Pile:
 
     def comparator(self, a, b):
         return a < b
+
+    def key_cmp(self, x):
+        def compare(a, b):
+            if self.comparator(a, b):
+                return -1
+            elif self.comparator(b, a):
+                return 1
+            else:
+                return 0
+
+        return cmp_to_key(compare)(x)
 
     def length(self):
         return len(self.stacks)
@@ -426,6 +441,91 @@ class Pile:
             print(tl)
             breakpoint()
 
+        def sort_stack_quicksort(
+            src_idx,
+            swap_stack_idxs=None,
+            src_count=float("Inf"),
+            buffer_idx=None,
+            final_idx=None,
+            tl="start",
+        ):
+            # We want to sort `stack` using the list of `swap_stacks` as space to sort
+            if tl == "start":
+                swap_stack_idxs = [
+                    f"{self.swap_idx()}.stack[{i}]" for i in range(self.swap().size())
+                ]
+                final_idx = f"{src_idx}"
+                buffer_idx = f"{swap_stack_idxs[2]}"
+            else:
+                buffer_idx = f"{src_idx}"
+            left_idx = swap_stack_idxs[0]
+            right_idx = swap_stack_idxs[1]
+            print(tl, src_idx, swap_stack_idxs, src_count, buffer_idx, final_idx)
+            print("\tsrc:\t", self.get_stack(src_idx))
+            print("")
+            print("\tleft:\t", self.get_stack(left_idx))
+            print("\tright:\t", self.get_stack(right_idx))
+            print("\n\n")
+            if src_count == 2:
+                elems = self.get_read_cache(src_idx, "elements")
+                if not self.comparator(elems[0], elems[1]):
+                    self.move_element(src_idx, right_idx)
+                    self.move_element(src_idx, final_idx)
+                    self.move_element(right_idx, final_idx)
+                else:
+                    self.move_element(src_idx, final_idx)
+                    self.move_element(src_idx, final_idx)
+                return
+            elif src_count == 1:
+                self.move_element(src_idx, final_idx)
+                return
+            elif src_count < 1:
+                return
+            elems = self.get_read_cache(src_idx, "elements")
+            pivot = None
+            if len(elems) > 0:
+                if src_count != float("Inf"):
+                    elems = elems[-1 * src_count :]
+                pivot = sorted(elems, key=self.key_cmp)[len(elems) // 2]
+            left_count = 0
+            right_count = 0
+            i = 0
+            while i < src_count and not self.is_empty(src_idx):
+                elem = self.read_top_element(src_idx)
+                if pivot is None:
+                    pivot = elem
+                if self.comparator(elem, pivot):
+                    self.move_element(src_idx, left_idx)
+                    left_count += 1
+                else:
+                    self.move_element(src_idx, right_idx)
+                    right_count += 1
+                i += 1
+            print("\tsrc:\t", self.get_stack(src_idx))
+            print("\tpivot:\t", pivot)
+            print("\tleft:\t", self.get_stack(left_idx))
+            print("\tright:\t", self.get_stack(right_idx))
+            print("\n\n")
+            breakpoint()
+            sort_stack_quicksort(
+                right_idx,
+                swap_stack_idxs=[left_idx, buffer_idx],
+                src_count=right_count,
+                final_idx=final_idx,
+                tl="right",
+            )
+            # while not self.is_empty(right_idx):
+            #     self.move_element(right_idx, final_idx)
+            sort_stack_quicksort(
+                left_idx,
+                swap_stack_idxs=[right_idx, buffer_idx],
+                src_count=left_count,
+                final_idx=final_idx,
+                tl="left",
+            )
+            # for _ in range(left_count):
+            #     self.move_element(left_idx, final_idx)
+
         self.group_map = dict()
         self.reset_movement_counters()
         swap_size = ceil(self.size() / Stack.max_size)
@@ -440,7 +540,9 @@ class Pile:
         last_stack_idx = num_stacks - 2
         # Sort each stack up to the swap
         for stack_idx in range(swap_idx):
-            sort_stack(stack_idx)
+            sort_stack_quicksort(stack_idx)
+            print(f"{stack_idx} sorted...")
+            breakpoint()
         print(self.total_moves, self.uncached_reads)
         # Merge each sorted stack
         divide_and_merge(0, last_stack_idx, swap_idx)
