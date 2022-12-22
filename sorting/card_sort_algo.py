@@ -149,7 +149,8 @@ class Pile:
         self.group_map = dict()
         self.reset_movement_counters()
         self.read_cache = {
-            i: {"empty": None, "full": None, "top": []} for i in range(self.length())
+            i: {"empty": None, "full": None, "top": [], "been_emptied": False}
+            for i in range(self.length())
         }
 
     def reset_movement_counters(self):
@@ -171,16 +172,22 @@ class Pile:
     def put_stack(self, stack):
         self.stacks.append(stack)
         stack_idx = str(self.length() - 1)
-        self.put_read_cache(stack_idx, "empty", None)
-        self.put_read_cache(stack_idx, "full", None)
-        self.put_read_cache(stack_idx, "top", [])
+        self.read_cache[str(stack_idx)] = {
+            "empty": None,
+            "full": None,
+            "top": [],
+            "been_emptied": False,
+        }
 
     def put_stack_group(self, stack, stack_idx):
         stack_idx = str(stack_idx)
         self.group_map[stack_idx] = stack
-        self.put_read_cache(stack_idx, "empty", None)
-        self.put_read_cache(stack_idx, "full", None)
-        self.put_read_cache(stack_idx, "top", [])
+        self.read_cache[stack_idx] = {
+            "empty": None,
+            "full": None,
+            "top": [],
+            "been_emptied": False,
+        }
 
     def swap(self):
         return self.stacks[-1]
@@ -192,21 +199,25 @@ class Pile:
         stack = self.get_stack(stack_idx)
         if type(stack) == StackGroup:
             stack_idx = f"{stack_idx}_group"
-        rc = self.read_cache.get(stack_idx, {"empty": None, "full": None, "top": []})[
-            name
-        ]
+        rc = self.read_cache.get(
+            stack_idx, {"empty": None, "full": None, "top": [], "been_emptied": False}
+        )["top" if name == "elements" else name]
         if name == "top":
             return rc[-1] if len(rc) > 0 else None
-        else:
-            return rc
+        return rc
 
-    def put_read_cache(self, stack_idx, name, val, idx=None):
-        stack = self.get_stack(stack_idx, idx=idx)
+    def put_read_cache(self, stack_idx, name, val):
+        stack = self.get_stack(stack_idx)
         if type(stack) == StackGroup:
             stack_idx = f"{stack_idx}_group"
         stack_idx = str(stack_idx)
         if stack_idx not in self.read_cache.keys():
-            self.read_cache[stack_idx] = {"empty": None, "full": None, "top": []}
+            self.read_cache[stack_idx] = {
+                "empty": None,
+                "full": None,
+                "top": [],
+                "been_emptied": False,
+            }
         if name == "top":
             if val is None:
                 if len(self.read_cache[stack_idx][name]) > 0:
@@ -225,59 +236,60 @@ class Pile:
     def size(self):
         return sum([len(stack) for stack in self.stacks])
 
-    def read_top_element(self, stack_idx, sg_idx=None):
-        if sg_idx is not None:
-            stack_idx = f"{stack_idx}.stack[{sg_idx}]"
+    def read_top_element(self, stack_idx):
         top = self.get_read_cache(stack_idx, "top")
         if top is not None:
             self.cached_reads += 1
             return top
-        top = self.get_stack(stack_idx, idx=sg_idx).read_top_element()
+        top = self.get_stack(stack_idx).read_top_element()
         self.put_read_cache(stack_idx, "top", top)
         if top is not None:
             self.put_read_cache(stack_idx, "empty", False)
         self.uncached_reads += 1
         return top
 
-    def is_full(self, stack_idx, sg_idx=None):
-        if sg_idx is not None:
-            stack_idx = f"{stack_idx}.stack[{sg_idx}]"
-        full = self.get_read_cache(stack_idx, "full")
+    def is_full(self, stack_idx):
+        # If stack has been empty once, we know every element inside of it
+        been_emptied = self.get_read_cache(stack_idx, "been_emptied")
+        if been_emptied:
+            full = len(self.get_read_cache(stack_idx, "elements")) >= Stack.max_size
+        else:
+            full = self.get_read_cache(stack_idx, "full")
         if full is not None:
             self.cached_reads += 1
             return full
-        full = self.get_stack(stack_idx, idx=sg_idx).is_full()
+        full = self.get_stack(stack_idx).is_full()
         self.put_read_cache(stack_idx, "full", full)
         if full:
             self.put_read_cache(stack_idx, "empty", False)
         self.uncached_reads += 1
         return full
 
-    def is_empty(self, stack_idx, sg_idx=None):
-        if sg_idx is not None:
-            stack_idx = f"{stack_idx}.stack[{sg_idx}]"
-        empty = self.get_read_cache(stack_idx, "empty")
+    def is_empty(self, stack_idx):
+        # If stack has been empty once, we know every element inside of it
+        been_emptied = self.get_read_cache(stack_idx, "been_emptied")
+        if been_emptied:
+            empty = len(self.get_read_cache(stack_idx, "elements")) == 0
+        else:
+            empty = self.get_read_cache(stack_idx, "empty")
         if empty is not None:
             self.cached_reads += 1
             return empty
-        empty = self.get_stack(stack_idx, idx=sg_idx).is_empty()
+        empty = self.get_stack(stack_idx).is_empty()
         self.put_read_cache(stack_idx, "empty", empty)
         if empty:
             self.put_read_cache(stack_idx, "full", False)
+            self.put_read_cache(stack_idx, "been_emptied", True)
         self.uncached_reads += 1
         return empty
 
-    def move_element(self, src_stack, dest_stack, src_idx=None, dest_idx=None):
-        elem = self.get_stack(src_stack, idx=src_idx).pop()
-        self.get_stack(dest_stack, idx=dest_idx).push(elem)
-        if src_idx is not None:
-            src_stack = f"{src_stack}.stack[{src_idx}]"
+    def move_element(self, src_stack, dest_stack):
+        elem = self.get_stack(src_stack).pop()
+        self.get_stack(dest_stack).push(elem)
         # Update read cache with values we can assume
         self.put_read_cache(src_stack, "full", False)
         self.put_read_cache(src_stack, "empty", None)
         self.put_read_cache(src_stack, "top", None)
-        if dest_idx is not None:
-            dest_stack = f"{dest_stack}.stack[{dest_idx}]"
         self.put_read_cache(dest_stack, "full", None)
         self.put_read_cache(dest_stack, "empty", False)
         self.put_read_cache(dest_stack, "top", elem)
@@ -378,29 +390,28 @@ class Pile:
             while not self.is_empty(swap_idx):
                 self.move_element(swap_idx, stack_idx)
 
-        def sort_stack_immproved(stack_idx):
+        def sort_stack_immproved(src_idx):
             # We want to sort `stack` using the list of `swap_stacks` as space to sort
-            src_stack = self.get_stack(stack_idx)
             swap_idx = self.swap_idx()
             swap_stacks = self.swap().stacks
 
             # The state will help us keep track of where we put each element from `stack`
             state = [list() for _ in swap_stacks]
-            while not src_stack.is_empty():
-                elem = src_stack.read_top_element()
+            while not self.is_empty(src_idx):
+                elem = self.read_top_element(src_idx)
                 # Leave last stack for unsortable elements
                 for i in range(len(state) - 1):
                     if len(state[i]) == 0 or not self.comparator(elem, state[i][-1]):
                         # Keep track internally
                         state[i].append(elem)
                         # Move element on the robot from one stack to another
-                        self.move_element(stack_idx, swap_idx, dest_idx=i)
+                        self.move_element(src_idx, f"{swap_idx}.stack[{i}]")
                         # Let rest of loop know that we have placed elem and break
                         elem = None
                         break
                 if elem is not None:
                     state[len(state) - 1].append(elem)
-                    self.move_element(stack_idx, swap_idx, dest_idx=len(state) - 1)
+                    self.move_element(src_idx, f"{swap_idx}.stack[{len(state) - 1}]")
             tl = Pile(state)
             print(tl)
             while sum([len(stack) for stack in state[:-1]]) > 0:
@@ -410,8 +421,9 @@ class Pile:
                         min_val is None or not self.comparator(stack[-1], min_val[1])
                     ):
                         min_val = (i, stack.pop())
-                self.move_element(swap_idx, stack_idx, src_idx=min_val[0])
-            print(src_stack)
+                self.move_element(f"{swap_idx}.stack[{min_val[0]}]", src_idx)
+            print(self.get_stack(src_idx))
+            print(tl)
             breakpoint()
 
         self.group_map = dict()
