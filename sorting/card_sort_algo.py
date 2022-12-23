@@ -231,8 +231,9 @@ class Pile:
         else:
             self.read_cache[stack_idx][name] = val
 
-    def comparator(self, a, b):
-        return not (a < b)
+    def comparator(self, a, b, reverse=False):
+        res = a < b
+        return not res if reverse else res
 
     def key_cmp(self, x):
         def compare(a, b):
@@ -298,9 +299,9 @@ class Pile:
         self.uncached_reads += 1
         return empty
 
-    def is_sorted(self, stack_idx):
+    def is_sorted(self, stack_idx, reverse=False):
         elems = self.get_stack(stack_idx).elements
-        sorted_elems = sorted(elems, key=self.key_cmp, reverse=True)
+        sorted_elems = sorted(elems, key=self.key_cmp, reverse=not reverse)
         return False not in {
             (
                 self.comparator(sorted_elems[i], elems[i])

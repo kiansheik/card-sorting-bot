@@ -67,3 +67,99 @@ class CNN(nn.Module):
         self.fc = nn.Linear(
             64 * IMAGE_SIZE * IMAGE_SIZE // (IMAGE_SIZE // 2) ** 2, num_classes
         )
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = nn.functional.relu(x)
+        x = nn.functional.max_pool2d(x, kernel_size=2)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = nn.functional.relu(x)
+        x = nn.functional.max_pool2d(x, kernel_size=2)
+        x = self.conv3(x)
+        x = self.bn3(x)
+        x = nn.functional.relu(x)
+        x = nn.functional.max_pool2d(x, kernel_size=2)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
+
+
+# Instantiate the model and move it to the device
+model = CNN(num_classes=len(train_dataset.classes)).to(device)
+
+# Define the loss function and optimizer
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+
+# Define the metrics to track
+def accuracy(output, target, topk=(1,)):
+    """Compute the top-k accuracy."""
+    with torch.no_grad():
+        maxk = max(topk)
+        batch_size = target.size(0)
+
+        _, pred = output.topk(maxk, 1, True, True)
+        pred = pred.t()
+        correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+        res = []
+        for k in topk:
+            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+            res.append(correct_k.mul_(100.0 / batch_size))
+        return res
+
+
+# Train the model
+best_acc = 0.0
+for epoch in range(10):  # Change this to a larger number of epochs to train for longer
+    # Training
+    model.train()
+    train_loss = 0.0
+    train_acc = 0.0
+    for images, labels in train_loader:
+        images = images.to(device)
+        labels = labels.to(device)
+
+        optimizer.zero_grad()
+        output = model(images)
+        loss = criterion(output, labels)
+        train_loss += loss.item()
+        train_acc += accuracy(output, labels)[0].item()
+
+        loss.backward()
+        optimizer.step()
+
+    train_loss /= len(train_loader)
+    train_acc /= len(train_loader)
+
+    # Validation
+    model.eval()
+    val_loss = 0.0
+    val_acc = 0.0
+    with torch.no_grad():
+        for images, labels in validation_loader:
+            images = images.to(device)
+            labels = labels.to(device)
+
+            output = model(images)
+            loss = criterion(output, labels)
+            val_loss += loss.item()
+            val_acc += accuracy(output, labels)[0].item()
+
+    val_loss /= len(validation_loader)
+    val_acc /= len(validation_loader)
+
+    # Print the metrics
+    print(
+        f"Epoch {epoch+1}: train loss: {train_loss:.4f}, train acc: {train_acc:.2f}%, val loss: {val_loss:.4f}, val acc: {val_acc:.2f}%"
+    )
+
+    # Save the model if it's the best so far
+    if val_acc > best_acc:
+        best_acc = val_acc
+        torch.save(model.state_dict(), "best_model.pt")
+
+print("Training complete!")
