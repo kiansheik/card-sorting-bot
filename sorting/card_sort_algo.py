@@ -298,6 +298,17 @@ class Pile:
         self.uncached_reads += 1
         return empty
 
+    def is_sorted(self, stack_idx):
+        elems = self.get_stack(stack_idx).elements
+        sorted_elems = sorted(elems, key=self.key_cmp, reverse=True)
+        return False not in {
+            (
+                self.comparator(sorted_elems[i], elems[i])
+                == self.comparator(elems[i], sorted_elems[i])
+            )
+            for i in range(len(elems))
+        }
+
     def move_element(self, src_stack, dest_stack):
         elem = self.get_stack(src_stack).pop()
         self.get_stack(dest_stack).push(elem)
@@ -405,42 +416,6 @@ class Pile:
             while not self.is_empty(swap_idx):
                 self.move_element(swap_idx, stack_idx)
 
-        def sort_stack_immproved(src_idx):
-            # We want to sort `stack` using the list of `swap_stacks` as space to sort
-            swap_idx = self.swap_idx()
-            swap_stacks = self.swap().stacks
-
-            # The state will help us keep track of where we put each element from `stack`
-            state = [list() for _ in swap_stacks]
-            while not self.is_empty(src_idx):
-                elem = self.read_top_element(src_idx)
-                # Leave last stack for unsortable elements
-                for i in range(len(state) - 1):
-                    if len(state[i]) == 0 or not self.comparator(elem, state[i][-1]):
-                        # Keep track internally
-                        state[i].append(elem)
-                        # Move element on the robot from one stack to another
-                        self.move_element(src_idx, f"{swap_idx}.stack[{i}]")
-                        # Let rest of loop know that we have placed elem and break
-                        elem = None
-                        break
-                if elem is not None:
-                    state[len(state) - 1].append(elem)
-                    self.move_element(src_idx, f"{swap_idx}.stack[{len(state) - 1}]")
-            tl = Pile(state)
-            print(tl)
-            while sum([len(stack) for stack in state[:-1]]) > 0:
-                min_val = None
-                for i, stack in enumerate(state[:-1]):
-                    if len(stack) > 0 and (
-                        min_val is None or not self.comparator(stack[-1], min_val[1])
-                    ):
-                        min_val = (i, stack.pop())
-                self.move_element(f"{swap_idx}.stack[{min_val[0]}]", src_idx)
-            print(self.get_stack(src_idx))
-            print(tl)
-            breakpoint()
-
         def sort_stack_quicksort(
             src_idx,
             swap_stack_idxs=None,
@@ -460,15 +435,15 @@ class Pile:
                 buffer_idx = f"{src_idx}"
             left_idx = swap_stack_idxs[0]
             right_idx = swap_stack_idxs[1]
-            print(tl, src_idx, swap_stack_idxs, src_count, buffer_idx, final_idx)
-            print("\tsrc:\t", self.get_stack(src_idx))
-            print("")
-            print("\tleft:\t", self.get_stack(left_idx))
-            print("\tright:\t", self.get_stack(right_idx))
-            print("\n\n")
+            # print(tl, src_idx, swap_stack_idxs, src_count, buffer_idx, final_idx)
+            # print("\tsrc:\t", self.get_stack(src_idx))
+            # print("")
+            # print("\tleft:\t", self.get_stack(left_idx))
+            # print("\tright:\t", self.get_stack(right_idx))
+            # print("\n\n")
             if src_count == 2:
                 elems = self.get_read_cache(src_idx, "elements")
-                if not self.comparator(elems[0], elems[1]):
+                if self.comparator(elems[-1], elems[-2]):
                     self.move_element(src_idx, right_idx)
                     self.move_element(src_idx, final_idx)
                     self.move_element(right_idx, final_idx)
@@ -485,8 +460,18 @@ class Pile:
             pivot = None
             if len(elems) > 0:
                 if src_count != float("Inf"):
-                    elems = elems[-1 * src_count :]
-                pivot = sorted(elems, key=self.key_cmp)[len(elems) // 2]
+                    elems = sorted(elems[-1 * src_count :], key=self.key_cmp)
+                    elem_set = set(elems)
+                    if len(elem_set) == 1:
+                        for _ in elems:
+                            self.move_element(src_idx, final_idx)
+                            return
+                if len(elem_set) != len(elems):
+                    pivot = sum(elem_set) / float(len(elem_set))
+                else:
+                    pivot = elems[len(elems) // 2]
+                # print("\n\tpivot:\t", pivot)
+                # print("\n\tpivot_choices:\t", elems)
             left_count = 0
             right_count = 0
             i = 0
@@ -501,12 +486,14 @@ class Pile:
                     self.move_element(src_idx, right_idx)
                     right_count += 1
                 i += 1
-            print("\tsrc:\t", self.get_stack(src_idx))
-            print("\tpivot:\t", pivot)
-            print("\tleft:\t", self.get_stack(left_idx))
-            print("\tright:\t", self.get_stack(right_idx))
-            print("\n\n")
-            breakpoint()
+
+            # print("\tsrc:\t", self.get_stack(src_idx))
+            # print("\tpivot:\t", pivot)
+            # print("\tleft:\t", self.get_stack(left_idx))
+            # print("\tright:\t", self.get_stack(right_idx))
+            # print("\n\tfinal:\t", self.get_stack(final_idx))
+            # print("\n\n")
+            # breakpoint()
             sort_stack_quicksort(
                 right_idx,
                 swap_stack_idxs=[left_idx, buffer_idx],
@@ -541,8 +528,7 @@ class Pile:
         # Sort each stack up to the swap
         for stack_idx in range(swap_idx):
             sort_stack_quicksort(stack_idx)
-            print(f"{stack_idx} sorted...")
-            breakpoint()
+            assert self.is_sorted(stack_idx)
         print(self.total_moves, self.uncached_reads)
         # Merge each sorted stack
         divide_and_merge(0, last_stack_idx, swap_idx)
@@ -563,6 +549,10 @@ class Pile:
 
 
 p = Pile(
+    # Useful test cases for quicksort
+    # [[9236,5466,28185,5687,10232,23244,2381,14792,15287,14571,4876,15157,4604,16104,24433,17894,19953,29262,24395,18849,21671,23436,19657,21720,15927,1312,14375,19008,27443,570,1386,24780,6941,12421,18428,23540,17583,10030,9274,140,2022,4516,13097,2584,28577,4877,29284,12827,29180,22375,4541,5512,28826,3033,6941,21033,9131,12212,5585]
+    # ,[8290,2583,28640,11733,8410,22240,2163,12472,24574,19659,29506,10877,28910,28661,29183,3097,24651,6706,2523,26032,26546,19440,12674,22603,3231,27012,4759,26887,6398,3444,20052,20782,5489,3358,4248,22835,1470,200,23028,18130,7760,4842,2461,21443,19440,1773,25108,26094,7134,6006,29819,9513,1207,24315,17457,15241,9298,16646,13255]
+    # ,[17327,4979,5708,1863, 157,8472,29211,15905,2805,26123, 512,2725,17263,20849,7360,12233,2227,10198,17439,28366,20182,22168,5083,19391,6376,5522,21668,29715,9962,23001,22154,7786,8004,1051,18370,9114,27968,11904,4784,11749,14226,3228,10469,22852,28662,8844,7349,1616,8918,6995,22096,5309,24479,8747,27415,13545,6726,3583,281]]+
     [
         [ceil(random.random() * 30_000) for _ in range(ceil((Stack.max_size - 1)))]
         for _ in range(4 * 2)
