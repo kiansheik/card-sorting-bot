@@ -374,6 +374,7 @@ class Pile:
             )
             pile.group_map[str(stack1_idx)] = stack_group
             # Move elements from merged_stack back to stack1 in reverse order
+            # TODO: modify function to deal with reverse sorted lists to save time on the following operation
             for i in range(num_elems):
                 pile.move_element(swap_idx, stack1_idx)
 
