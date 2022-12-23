@@ -232,7 +232,7 @@ class Pile:
             self.read_cache[stack_idx][name] = val
 
     def comparator(self, a, b):
-        return a < b
+        return not (a < b)
 
     def key_cmp(self, x):
         def compare(a, b):
@@ -386,37 +386,19 @@ class Pile:
             divide_and_merge(mid + 1, end_idx, swap_idx, pile=pile)
             merge(start_idx, mid + 1, swap_idx, pile=pile)
 
-        def sort_stack(stack_idx):
-            # Buffer only needs to hold one car, like a variable, so we can use any other stack in the pile
-            # This ensures it will be a stack other than the two being used. This assumes that a stack always has at least
-            # 1 less than the maximum card value
+        def pile_merge():
+            idxs = [i for i in range(self.swap_idx())]
+            while False in {self.is_empty(idx) for idx in idxs}:
+                min_val = (None, None)
+                for idx in idxs:
+                    if not self.is_empty(idx):
+                        if None in min_val or self.comparator(
+                            self.read_top_element(idx), min_val[0]
+                        ):
+                            min_val = (self.read_top_element(idx), idx)
+                self.move_element(min_val[1], self.swap_idx())
 
-            # Find a buffer stack to use which is not full and not in a group
-            # This stack can be any stack because it is used to store only 1 card at a time
-            swap_idx = self.swap_idx()
-            for i in range(swap_idx):
-                if stack_idx != i:
-                    if not self.get_stack(i).in_group() and not self.is_full(i):
-                        buffer_idx = i
-                        break
-            while not self.is_empty(stack_idx):
-                if not self.is_empty(swap_idx) and self.comparator(
-                    self.read_top_element(stack_idx), self.read_top_element(swap_idx)
-                ):
-                    self.move_element(stack_idx, buffer_idx)
-                    self.move_element(swap_idx, stack_idx)
-                    while not self.is_empty(swap_idx) and self.comparator(
-                        self.read_top_element(buffer_idx),
-                        self.read_top_element(swap_idx),
-                    ):
-                        self.move_element(swap_idx, stack_idx)
-                    self.move_element(buffer_idx, swap_idx)
-                self.move_element(stack_idx, swap_idx)
-            # Move elements from swap back to stack in reverse order
-            while not self.is_empty(swap_idx):
-                self.move_element(swap_idx, stack_idx)
-
-        def sort_stack_quicksort(
+        def quicksort_stack(
             src_idx,
             swap_stack_idxs=None,
             src_count=float("Inf"),
@@ -425,11 +407,10 @@ class Pile:
             tl="start",
             debug=False,
         ):
-            # We want to sort `stack` using the list of `swap_stacks` as space to sort
             if tl == "start":
                 swap_stack_idxs = [
                     f"{self.swap_idx()}.stack[{i}]" for i in range(self.swap().size())
-                ]
+                ][:3]
                 final_idx = f"{src_idx}"
                 buffer_idx = f"{swap_stack_idxs[2]}"
             else:
@@ -497,24 +478,20 @@ class Pile:
                 print("\n\tfinal:\t", self.get_stack(final_idx))
                 print("\n\n")
                 breakpoint()
-            sort_stack_quicksort(
+            quicksort_stack(
                 right_idx,
                 swap_stack_idxs=[left_idx, buffer_idx],
                 src_count=right_count,
                 final_idx=final_idx,
                 tl="right",
             )
-            # while not self.is_empty(right_idx):
-            #     self.move_element(right_idx, final_idx)
-            sort_stack_quicksort(
+            quicksort_stack(
                 left_idx,
                 swap_stack_idxs=[right_idx, buffer_idx],
                 src_count=left_count,
                 final_idx=final_idx,
                 tl="left",
             )
-            # for _ in range(left_count):
-            #     self.move_element(left_idx, final_idx)
 
         self.group_map = dict()
         self.reset_movement_counters()
@@ -530,14 +507,17 @@ class Pile:
         last_stack_idx = num_stacks - 2
         # Sort each stack up to the swap
         for stack_idx in range(swap_idx):
-            sort_stack_quicksort(stack_idx)
+            quicksort_stack(stack_idx)
             assert self.is_sorted(stack_idx)
         print(
             f"Pre-merge total moves: {self.total_moves}, uncached reads: {self.uncached_reads}"
         )
         # Merge each sorted stack
+        # breakpoint()
+        # pile_merge()
         divide_and_merge(0, last_stack_idx, swap_idx)
         # Remove the empty stack from the end of the pile
+        # self.stacks = self.swap().stacks
         self.stacks.pop()
         self.group_map = dict()
         t_size = self.size()
