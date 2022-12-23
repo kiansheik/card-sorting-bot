@@ -529,7 +529,9 @@ class Pile:
         for stack_idx in range(swap_idx):
             sort_stack_quicksort(stack_idx)
             assert self.is_sorted(stack_idx)
-        print(self.total_moves, self.uncached_reads)
+        print(
+            f"Pre-merge total moves: {self.total_moves}, uncached reads: {self.uncached_reads}"
+        )
         # Merge each sorted stack
         divide_and_merge(0, last_stack_idx, swap_idx)
         # Remove the empty stack from the end of the pile
@@ -543,7 +545,7 @@ class Pile:
         )
         dim = rectangle_dimensions(total_stacks)
         print(
-            f"This requires at least a {dim[0]}x{dim[1]} grid in size and estimated {(self.total_moves * MOVE_DURATION + (self.uncached_reads * READ_DURATION))/60/60/24} days to complete"
+            f"This requires at least a {dim[0]}x{dim[1]} grid in size and estimated {(self.total_moves * MOVE_DURATION + (self.uncached_reads * READ_DURATION))/60/60} hours to complete"
         )
         self.reset_movement_counters()
 
