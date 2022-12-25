@@ -1,0 +1,7 @@
+<View>
+  <Image name="image" value="$image" zoomControl="true"/>
+  <RectangleLabels name="label" toName="image">
+    
+    
+  <Label value="card" background="#FFA39E"/><Label value="set_symbol" background="#D4380D"/><Label value="name" background="#FFC069"/><Label value="collector_number" background="#AD8B00"/><Label value="type_line" background="#D3F261"/></RectangleLabels>
+</View>
