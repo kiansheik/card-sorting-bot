@@ -44,36 +44,42 @@ def rotate_bound(image, angle, bounding_boxes):
     mask = cv2.warpAffine(mask, M, (w, h))
     boxes = []
     for i, bounding_box in enumerate(bounding_boxes):
-        box_x, box_y, box_w, box_h = bounding_box
-        # Convert the bounding box coordinates into a 2D point array
-        points = np.array(
-            [
-                [box_x, box_y],
-                [box_x + box_w, box_y],
-                [box_x + box_w, box_y + box_h],
-                [box_x, box_y + box_h],
-            ]
+        box_x, box_y, box_w, box_h = [int(x) for x in bounding_box]
+        print(bounding_box)
+        bbox_mask = np.zeros((h, w), dtype=np.uint8)
+        cv2.rectangle(
+            bbox_mask,
+            (box_x, box_y),
+            (box_x + box_w, box_y + box_h),
+            (255, 255, 255),
+            -1,
         )
-        # apply the transformation to the bounding box coordinates
-        points_transformed = cv2.warpAffine(points, M, (w, h))
-        box = [
-            int(x)
-            for x in [
-                points_transformed[:, 0].min(),
-                points_transformed[:, 1].min(),
-                points_transformed[:, 0].max() - points_transformed[:, 0].min(),
-                points_transformed[:, 1].max() - points_transformed[:, 1].min(),
-            ]
-        ]
-        boxes.append(box)
+        bbox_mask = cv2.warpAffine(bbox_mask, M, (w, h))
+        boxes.append(bbox_mask)
     # return both the rotated image and the mask
     return rotated_image, mask, boxes
+
+
+def bitmask_to_bounding_box(bitmask):
+    # Find the non-zero elements in the bitmask
+    non_zero_elements = cv2.findNonZero(bitmask)
+
+    # Use the minAreaRect function to find the bounding box of the rotated rectangle
+    rect = cv2.minAreaRect(non_zero_elements)
+
+    # Extract the bounding box points from the rect object
+    bounding_box = cv2.boxPoints(rect)
+
+    # Convert the bounding box points to integer values
+    bounding_box = np.int0(bounding_box)
+
+    return bounding_box
 
 
 def overlay_image(
     foreground, background, scale_factor=0.5, x=0.5, y=0.5, angle=0.5, bounding_boxes=[]
 ):
-    foreground_scaled, mask, boxes = rotate_bound(
+    foreground_scaled, mask, box_masks = rotate_bound(
         foreground, 360 * angle, bounding_boxes
     )
     # Calculate the scale factor to fit the foreground image inside the background image
@@ -100,8 +106,23 @@ def overlay_image(
     x = int(x * (background.shape[0] - foreground_scaled.shape[0]))
     y = int(y * (background.shape[1] - foreground_scaled.shape[1]))
 
-    # Overlay the scaled foreground image on the background image
+    # Overlay the scaleed foreground image on the background image
     mask_inv = cv2.bitwise_not(mask)
+    final_boxes = []
+    for box_mask in box_masks:
+        box_mask = ia.imresize_single_image(
+            box_mask,
+            (
+                int(foreground.shape[0] * scale_factor),
+                int(foreground.shape[1] * scale_factor),
+            ),
+        )
+        bg_mask = np.zeros(background.shape[:2], dtype=np.uint8)
+        bg_mask[
+            x : foreground_scaled.shape[0] + x, y : foreground_scaled.shape[1] + y
+        ] = box_mask
+        bounding_box = bitmask_to_bounding_box(bg_mask)
+        final_boxes.append(bounding_box)
     masked_foreground = cv2.bitwise_and(foreground_scaled, foreground_scaled, mask=mask)
     masked_background = cv2.bitwise_and(
         background[
@@ -115,7 +136,11 @@ def overlay_image(
     background[
         x : foreground_scaled.shape[0] + x, y : foreground_scaled.shape[1] + y
     ] = cv2.add(masked_foreground, masked_background)
-    return background
+    # Convert the bitmask to a bounding box
+    # Draw the bounding box on the image as a green rectangle
+    for bounding_box in final_boxes:
+        cv2.drawContours(background, [bounding_box], -1, (0, 255, 0), 2)
+    return background, final_boxes
 
 
 background = cv2.imread("/Users/kiansheik/Downloads/table_bg.jpeg")
@@ -129,21 +154,22 @@ annotated_ids = {
 with open("/Users/kiansheik/Downloads/oracle-cards-20221222220256.json") as f:
     all_cards = json.load(f)
 
+i = 0
 for card in all_cards:
     if card["id"] in annotated_ids:
         # Extraxt bounding boxes from annotations to be transformed
         notes = annotated_ids[card["id"]]["annotations"][-1]["result"]
         boxes = [
             (
-                x["value"]["x"],
-                x["value"]["y"],
-                x["value"]["width"],
-                x["value"]["height"],
+                x["value"]["x"] / 100.0 * x["original_width"],
+                x["value"]["y"] / 100.0 * x["original_height"],
+                x["value"]["width"] / 100.0 * x["original_width"],
+                x["value"]["height"] / 100.0 * x["original_height"],
             )
             for x in notes
         ]
 
-        res = overlay_image(
+        res, bboxes = overlay_image(
             cv2.imread(f"vision/data/{card['id']}.jpg"),
             background,
             scale_factor=random.uniform(0.75, 1),
@@ -156,4 +182,6 @@ for card in all_cards:
         cv2.imshow("Augmented Image", res)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
-        break
+        if i > 10:
+            break
+        i += 1
