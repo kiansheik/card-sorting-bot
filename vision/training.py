@@ -24,7 +24,7 @@ BATCH_SIZE = 32
 
 # Load the training and validation datasets
 train_dataset = torchvision.datasets.ImageFolder(
-    root="path/to/train/dataset",
+    root="data/training",
     transform=transforms.Compose(
         [
             transforms.Resize(IMAGE_SIZE),
@@ -39,7 +39,7 @@ train_loader = data.DataLoader(
 )
 
 validation_dataset = torchvision.datasets.ImageFolder(
-    root="path/to/validation/dataset",
+    root="data/validation",
     transform=transforms.Compose(
         [
             transforms.Resize(IMAGE_SIZE),
