@@ -1,6 +1,6 @@
 import random
-from math import ceil, sqrt, floor
 from functools import cmp_to_key
+from math import ceil, floor, sqrt
 
 MOVE_DURATION = 5
 READ_DURATION = 2

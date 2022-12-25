@@ -1,6 +1,6 @@
+import copy
 import json
 import os
-import copy
 
 
 def get_all_files(path):

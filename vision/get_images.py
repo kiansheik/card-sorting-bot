@@ -1,14 +1,13 @@
-import urllib.request
 import json
+import os
+import random
+import time
+import urllib.request
+
 import cv2
 import numpy as np
-import random
-import random
-import numpy as np
-from PIL import Image
-import time
-import os
 import pandas as pd
+from PIL import Image
 
 
 def load_annotations(json_path):

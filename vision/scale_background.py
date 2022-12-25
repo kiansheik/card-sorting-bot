@@ -1,14 +1,27 @@
-import imgaug as ia
-import numpy as np
+import json
+import random
 import cv2
 import imgaug as ia
 import imgaug.augmenters as iaa
-from PIL import Image
-import random
 import imutils
+import numpy as np
+import pandas as pd
+from PIL import Image
 
 
-def rotate_bound(image, angle):
+def load_annotations(json_path):
+    with open(json_path) as f:
+        a = json.load(f)
+    annotations = [
+        x
+        for x in a
+        if pd.to_datetime(x["updated_at"])
+        >= pd.Timestamp("2022-12-24 21:14:36.599512+0000", tz="UTC")
+    ]
+    return annotations
+
+
+def rotate_bound(image, angle, bounding_boxes):
     # grab the dimensions of the image and then determine the
     # center
     (h, w) = image.shape[:2]
@@ -29,30 +42,40 @@ def rotate_bound(image, angle):
     )
     # apply the rotation transformation to the mask
     mask = cv2.warpAffine(mask, M, (w, h))
-    return rotated_image, mask
+    boxes = []
+    for i, bounding_box in enumerate(bounding_boxes):
+        box_x, box_y, box_w, box_h = bounding_box
+        # Convert the bounding box coordinates into a 2D point array
+        points = np.array(
+            [
+                [box_x, box_y],
+                [box_x + box_w, box_y],
+                [box_x + box_w, box_y + box_h],
+                [box_x, box_y + box_h],
+            ]
+        )
+        # apply the transformation to the bounding box coordinates
+        points_transformed = cv2.warpAffine(points, M, (w, h))
+        box = [
+            int(x)
+            for x in [
+                points_transformed[:, 0].min(),
+                points_transformed[:, 1].min(),
+                points_transformed[:, 0].max() - points_transformed[:, 0].min(),
+                points_transformed[:, 1].max() - points_transformed[:, 1].min(),
+            ]
+        ]
+        boxes.append(box)
+    # return both the rotated image and the mask
+    return rotated_image, mask, boxes
 
 
-def overlay_image(image, background, scale_factor=0.5, x=0.5, y=0.5, angle=0.5):
-    # Convert the foreground and background images to numpy arrays
-    foreground = image  # ia.imresize_single_image(np.array(image), (64, 64))
-    background = (
-        background  # ia.imresize_single_image(np.array(background), (512, 512))
+def overlay_image(
+    foreground, background, scale_factor=0.5, x=0.5, y=0.5, angle=0.5, bounding_boxes=[]
+):
+    foreground_scaled, mask, boxes = rotate_bound(
+        foreground, 360 * angle, bounding_boxes
     )
-
-    # Calculate the scale factor to fit the foreground image inside the background image
-    scale_factor_x = background.shape[1] / foreground.shape[1]
-    scale_factor_y = background.shape[0] / foreground.shape[0]
-    scale_factor = min(scale_factor_x, scale_factor_y) * scale_factor
-
-    # # Scale the foreground image
-    # foreground_scaled = ia.imresize_single_image(
-    #     foreground,
-    #     (
-    #         int(foreground.shape[0] * scale_factor),
-    #         int(foreground.shape[1] * scale_factor),
-    #     ),
-    # )
-    foreground_scaled, mask = rotate_bound(foreground, 360 * angle)
     # Calculate the scale factor to fit the foreground image inside the background image
     scale_factor_x = background.shape[1] / foreground_scaled.shape[1]
     scale_factor_y = background.shape[0] / foreground_scaled.shape[0]
@@ -92,27 +115,45 @@ def overlay_image(image, background, scale_factor=0.5, x=0.5, y=0.5, angle=0.5):
     background[
         x : foreground_scaled.shape[0] + x, y : foreground_scaled.shape[1] + y
     ] = cv2.add(masked_foreground, masked_background)
-
-    # Convert the image back to a PIL image and save it
-    result = Image.fromarray(background)
     return background
 
 
-img = cv2.imread(
-    "/Users/kiansheik/code/card-sorting-bot/vision/data/68593c6d-8d1b-4c36-84a1-f1144669825e.jpg"
-)
 background = cv2.imread("/Users/kiansheik/Downloads/table_bg.jpeg")
+annotations = load_annotations(
+    "/Users/kiansheik/code/card-sorting-bot/vision/annotations/project-3-at-2022-12-25-00-09-f9c60779.json"
+)
+annotated_ids = {
+    x["data"]["image"].split("/")[-1].split(".")[0]: x for x in annotations
+}
 
-for i in range(10):
-    res = overlay_image(
-        img,
-        background,
-        scale_factor=random.uniform(0.5, 1),
-        x=random.random(),
-        y=random.random(),
-        angle=random.uniform(-0.29, -0.21),
-    )
-    # Display the augmented image using OpenCV
-    cv2.imshow("Augmented Image", res)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+with open("/Users/kiansheik/Downloads/oracle-cards-20221222220256.json") as f:
+    all_cards = json.load(f)
+
+for card in all_cards:
+    if card["id"] in annotated_ids:
+        # Extraxt bounding boxes from annotations to be transformed
+        notes = annotated_ids[card["id"]]["annotations"][-1]["result"]
+        boxes = [
+            (
+                x["value"]["x"],
+                x["value"]["y"],
+                x["value"]["width"],
+                x["value"]["height"],
+            )
+            for x in notes
+        ]
+
+        res = overlay_image(
+            cv2.imread(f"vision/data/{card['id']}.jpg"),
+            background,
+            scale_factor=random.uniform(0.75, 1),
+            x=random.random(),
+            y=random.random(),
+            angle=random.uniform(0, 1),
+            bounding_boxes=boxes,
+        )
+        # Display the augmented image using OpenCV
+        cv2.imshow("Augmented Image", res)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        break

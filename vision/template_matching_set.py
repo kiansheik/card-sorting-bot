@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score
 
 # Load the set symbol images and labels
 symbols = []

@@ -1,9 +1,10 @@
+import random
+
 import cv2
 import imgaug as ia
 import imgaug.augmenters as iaa
 import imgaug.parameters as iap
 import numpy as np
-import random
 
 # Load the image
 image = cv2.imread(
