@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 vision/data/
+vision/augmented_data/
 vision/env/
