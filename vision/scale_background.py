@@ -91,6 +91,7 @@ def bitmask_to_bounding_box(bitmask):
 def overlay_image(
     foreground,
     background,
+    output_shape=(640, 640),
     scale_factor=0.5,
     x=0.5,
     y=0.5,
@@ -101,6 +102,8 @@ def overlay_image(
     foreground_scaled, mask, box_masks = rotate_bound(
         foreground, 360 * angle, bounding_boxes
     )
+    # Resize background image so all training data is the same
+    background = cv2.resize(background, output_shape)
     # Calculate the scale factor to fit the foreground image inside the background image
     scale_factor_x = background.shape[1] / foreground_scaled.shape[1]
     scale_factor_y = background.shape[0] / foreground_scaled.shape[0]
@@ -141,7 +144,7 @@ def overlay_image(
             x : foreground_scaled.shape[0] + x, y : foreground_scaled.shape[1] + y
         ] = box_mask
         bounding_box = bitmask_to_bounding_box(bg_mask)
-        final_boxes[label] = bounding_box
+        final_boxes[label] = bounding_box.tolist()
     masked_foreground = cv2.bitwise_and(foreground_scaled, foreground_scaled, mask=mask)
     masked_background = cv2.bitwise_and(
         background[
@@ -171,15 +174,17 @@ def generate_augmented_dataset(
         x["data"]["image"].split("/")[-1].split(".")[0]: x for x in annotations
     }
     new_annotations = dict()
-    background_path_list = get_file_paths(background_path)
+    bg_map = {
+        bp.split("/")[-1].replace(".", "_"): cv2.imread(bp)
+        for bp in get_file_paths(background_path)
+    }
     tq = tqdm(
         desc="Augmenting files...",
-        total=len(background_path_list) * len(annotated_ids) * images_per_background,
+        total=len(bg_map) * len(annotated_ids) * images_per_background,
     )
     for card_id, annotation in annotated_ids.items():
-        for bp in background_path_list:
-            background = cv2.imread(bp)
-            background_name = bp.split("/")[-1].replace(".", "_")
+        card = cv2.imread(f"{input_path}/{card_id}.jpg")
+        for background_name, background in bg_map.items():
             for i in range(images_per_background):
                 # Extraxt bounding boxes from annotations to be transformed
                 notes = annotation["annotations"][-1]["result"]
@@ -193,8 +198,9 @@ def generate_augmented_dataset(
                     for x in notes
                 }
                 res, bboxes = overlay_image(
-                    cv2.imread(f"{input_path}/{card_id}.jpg"),
-                    background.copy(),
+                    card,
+                    background,
+                    (640, 640),
                     scale_factor=random.uniform(0.75, 1),
                     x=random.random(),
                     y=random.random(),
@@ -202,12 +208,13 @@ def generate_augmented_dataset(
                     bounding_boxes=boxes,
                 )
                 # Save the image to a file
-                out_path = f"{output_path}/{card_id}_{background_name}_{i}.jpg"
+                out_name = f"{card_id}_{background_name}_{i}.jpg"
+                out_path = f"{output_path}/{out_name}"
                 cv2.imwrite(out_path, res)
-                new_annotations[card_id] = {
+                new_annotations[out_name] = {
                     "bbox": bboxes,
                     "card_id": card_id,
-                    "file": out_path,
+                    "file": out_name,
                 }
                 tq.update(1)
     with open(f"{output_path}/annotations.json", "w") as f:
@@ -220,4 +227,6 @@ input_path = "/Users/kiansheik/code/card-sorting-bot/vision/data"
 background_path = "/Users/kiansheik/code/card-sorting-bot/vision/backgrounds"
 annotations_path = "/Users/kiansheik/code/card-sorting-bot/vision/annotations/project-3-at-2022-12-25-00-09-f9c60779.json"
 
-generate_augmented_dataset(output_path, input_path, background_path, annotations_path)
+generate_augmented_dataset(
+    output_path, input_path, background_path, annotations_path, images_per_background=5
+)
