@@ -72,6 +72,71 @@ def rotate_bound(image, angle, bounding_boxes):
     return rotated_image, mask, boxes
 
 
+def add_random_shadow(img):
+    # Get the image size
+    h, w = img.shape[:2]
+
+    # Create a black image with the same size as the input image
+    mask = np.zeros((h, w), dtype=np.uint8)
+
+    # Generate and draw multiple random wavy lines
+    num_lines = random.randint(50, 500)
+    for i in range(num_lines):
+        x1 = random.randint(0, w)
+        y1 = random.randint(0, h)
+        x2 = random.randint(0, w)
+        y2 = random.randint(0, h)
+        num_waves = random.randint(5, 10)
+        wave_amplitude = random.randint(5, 25)
+        points = []
+        for i in range(num_waves + 1):
+            x = x1 + i * (x2 - x1) / num_waves
+            y = y1 + i * (y2 - y1) / num_waves
+            y += wave_amplitude * np.sin(x * np.pi * 2 / num_waves)
+            points.append((x, y))
+        points = np.array(points, np.int32)
+        points = points.reshape((-1, 1, 2))
+        cv2.polylines(mask, [points], False, (255, 255, 255))
+
+    # Apply a Gaussian blur to the mask image
+    ksize = (15, 15)
+    sigma = 10.0
+    mask = cv2.GaussianBlur(mask, ksize, sigma)
+
+    # Convert the shadow mask to a 3-channel image
+    mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+
+    # Merge the shadow mask with the input image, using a random value for alpha
+    alpha = random.uniform(0.5, 0.6)
+    beta = 1.0 - alpha
+    gamma = 0.0
+    dst = cv2.addWeighted(img, alpha, mask, beta, gamma)
+
+    return dst
+
+
+def skew_image(img, mask=None):
+    # Get the image size
+    h, w = img.shape[:2]
+
+    # Generate a random skew angle
+    angle = random.uniform(-5, 5)
+
+    # Calculate the transformation matrix
+    M = cv2.getRotationMatrix2D((w / 2, h / 2), angle, 1.0)
+
+    # Skew the image
+    skew_img = cv2.warpAffine(img, M, (w, h))
+
+    # Skew the mask if provided
+    if mask is not None:
+        skew_mask = cv2.warpAffine(mask, M, (w, h))
+    else:
+        skew_mask = None
+
+    return skew_img, skew_mask
+
+
 def bitmask_to_bounding_box(bitmask):
     # Find the non-zero elements in the bitmask
     non_zero_elements = cv2.findNonZero(bitmask)
@@ -163,7 +228,10 @@ def overlay_image(
     if draw_boxes:
         for bounding_box in final_boxes.values():
             cv2.drawContours(background, [bounding_box], -1, (0, 255, 0), 2)
-    return background, final_boxes
+
+    # Add blur
+    background = cv2.GaussianBlur(background, (5, 5), 1)
+    return add_random_shadow(background), final_boxes
 
 
 def generate_augmented_dataset(
@@ -200,7 +268,7 @@ def generate_augmented_dataset(
                 res, bboxes = overlay_image(
                     card,
                     background,
-                    (640, 640),
+                    (1920, 1080),
                     scale_factor=random.uniform(0.75, 1),
                     x=random.random(),
                     y=random.random(),
@@ -228,5 +296,5 @@ background_path = "/Users/kiansheik/code/card-sorting-bot/vision/backgrounds"
 annotations_path = "/Users/kiansheik/code/card-sorting-bot/vision/annotations/project-3-at-2022-12-25-00-09-f9c60779.json"
 
 generate_augmented_dataset(
-    output_path, input_path, background_path, annotations_path, images_per_background=5
+    output_path, input_path, background_path, annotations_path, images_per_background=7
 )

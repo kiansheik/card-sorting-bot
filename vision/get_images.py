@@ -208,7 +208,6 @@ annotations = load_annotations(
 annotated_ids = {
     x["data"]["image"].split("/")[-1].split(".")[0]: x for x in annotations
 }
-breakpoint()
 
 for card in all_cards:
     if card["id"] in annotated_ids:
@@ -216,11 +215,11 @@ for card in all_cards:
             dl = download_image(
                 card["image_uris"]["border_crop"], f"data/{card['id']}.jpg"
             )
-            overlay_image(
-                f"data/{card['id']}.jpg",
-                card["id"],
-                "/Users/kiansheik/Downloads/table_bg.jpeg",
-            )
+            # overlay_image(
+            #     f"data/{card['id']}.jpg",
+            #     card["id"],
+            #     "/Users/kiansheik/Downloads/table_bg.jpeg",
+            # )
             if dl:
                 time.sleep(1)
         except Exception as e:
