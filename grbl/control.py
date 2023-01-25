@@ -1,14 +1,22 @@
-import serial
-import time
-import cv2
-from pyzbar import pyzbar
 import glob
+import time
+
+import cv2
+import numpy as np
+import serial
+from pyzbar import pyzbar
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from tqdm import tqdm
 
 grbl = None
 arduino = None
 
 
 def wait_till_ready():
+    ser.flushInput()
+    ser.flushOutput()
     while True:
         grbl.write(b"?\r")
         status = grbl.readline().decode()
@@ -60,12 +68,16 @@ def go_to(x=None, y=None, z=None):
 def check_status(ser):
     ser.flushInput()
     ser.flushOutput()
+    time.sleep(0.1)
     ser.write(b"?\r")
     time.sleep(0.1)
-    status = ser.readline().decode()
+    status = ser.read_all().decode()
     if ser == grbl:
         while "MPos" not in status:
             status = grbl.readline().decode()
+    if ser == arduino:
+        while "ARDUINO" not in status:
+            status = arduino.readline().decode()
     return status
 
 
@@ -84,7 +96,7 @@ def get_qr_bbox(cap):
         frame = cv2.flip(frame, -1)  # flip the image vertically
         adap = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # convert to grayscale
         adap = cv2.adaptiveThreshold(
-            adap, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 171, 2
+            adap, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 101, 1
         )
         adap = cv2.threshold(adap, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[
             1
@@ -101,11 +113,43 @@ def get_qr_bbox(cap):
             return (qr_code.rect), (adap.shape)
 
 
+def get_aruco_bbox(cap, marker_id, camera_matrix, dist_coeffs):
+    while True:
+        # Read a frame from the webcam
+        ret, frame = cap.read()
+        if not ret:
+            return None
+        frame = cv2.flip(frame, -1)  # flip the image vertically
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # convert to grayscale
+
+        # undistort the image
+        gray = cv2.undistort(gray, camera_matrix, dist_coeffs)
+
+        # Detect aruco markers
+        aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250)
+        parameters = cv2.aruco.DetectorParameters_create()
+        corners, ids, rejectedImgPoints = cv2.aruco.detectMarkers(
+            gray, aruco_dict, parameters=parameters
+        )
+        # Draw bounding boxes around detected markers
+        if corners:
+            for i in range(len(ids)):
+                if ids[i] == marker_id:
+                    corner = corners[i]
+                    x, y, w, h = cv2.boundingRect(corner)
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+                    return (x, y, w, h), (frame.shape)
+        cv2.imshow("Aruco Markers", frame)
+        # Break the loop if the 'q' key is pressed
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+
 calibrations = {
-    (0, 0): [(17.967, 40.928), (959, 455, 319, 322)],
-    (0, 1): [(22.962, 126.853), (969, 560, 323, 309)],
-    (0, 2): [(27.957, 216.777), (965, 621, 338, 324)],
-    (0, 3): [(27.957, 294.666), (500, 284, 567, 582)],
+    (0, 0): [(17.967, 40.928), (905, 205, 188, 182)],
+    (0, 1): [(22.962, 126.853), (881, 162, 191, 188)],
+    # (0, 2): [(27.957, 216.777), (965, 621, 338, 324)],
+    # (0, 3): [(27.957, 294.666), (500, 284, 567, 582)],
 }
 
 
@@ -171,14 +215,14 @@ def home():
         step(3, "Z", "+")
         wait_till_ready()
         status = check_status(grbl)
-    step(34, "Z", "-")
+    step(14, "Z", "-")
     # Home x
     status = check_status(grbl)
     while "Pn:" not in status or "X" not in status[1:-1].split("Pn:")[1].split("|")[0]:
-        step(1, "X", "-")
+        step(1, "X", "+")
         wait_till_ready()
         status = check_status(grbl)
-    step(4, "X", "+")
+    step(4, "X", "-")
     # Home y
     status = check_status(grbl)
     while "Pn:" not in status or "Y" not in status[1:-1].split("Pn:")[1].split("|")[0]:
@@ -207,14 +251,40 @@ def pick_up():
     wait_till_ready()
     step(40, "Z", "-")
     wait_till_ready()
-    status = "NOTHING"
-    while "Pn:" not in status or "Z" not in status[1:-1].split("Pn:")[1].split("|")[0]:
+    time.sleep(1.5)
+    while not card_on():
+        wait_till_ready()
         step(5, "Z", "-")
         time.sleep(0.2)
-        status = check_status(grbl)
-        print(status)
     vacuum_off()
     go_to(z=0)
+    wait_till_ready()
+
+
+def card_on():
+    subarray = []
+    # Throw away first array in case it's incomplete
+    second = False
+    arduino.flushInput()
+    arduino.flushOutput()
+    time.sleep(0.1)
+    arduino.write(b"CURRENT\r")
+    time.sleep(0.1)
+    while True:
+        line = arduino.readline().decode()
+        if "FIN" in line.strip():
+            if second and len(subarray) == len(X_train[0]):
+                res = clf.predict([subarray])
+                print(res)
+                return 2 in res
+            print(subarray)
+            subarray = []
+            second = True
+        else:
+            try:
+                subarray.append(int(line.split(" ")[0].strip()))
+            except Exception:
+                pass
 
 
 def move_card(stack_id_1, stack_id_2, cap):
@@ -231,6 +301,52 @@ def move_card(stack_id_1, stack_id_2, cap):
     wait_till_ready()
 
 
+# Collect sensor readings for each state
+def store_integers_from_file(filepath):
+    with open(filepath, "r") as file:
+        subarrays = []
+        subarray = []
+        for line in file:
+            if "FIN" in line.strip():
+                if len(subarray) == 50:
+                    subarrays.append(subarray)
+                subarray = []
+            else:
+                try:
+                    subarray.append(int(line.split(" ")[0].strip()))
+                except Exception:
+                    pass
+    return subarrays
+
+
+# Calibrate Current sensor SVM for detecting cards with readings from these 3 states
+vacuum_on_readings = store_integers_from_file("sig_dump_vacuum_on.txt")[1:-1]
+vacuum_off_readings = store_integers_from_file("sig_dump_vacuum_off.txt")[1:-1]
+vacuum_sucking_card_readings = store_integers_from_file("sig_dump_card_on.txt")[1:-1]
+
+# Create labels for the sensor readings
+vacuum_off_labels = [0] * len(vacuum_off_readings)
+vacuum_on_labels = [1] * len(vacuum_on_readings)
+vacuum_sucking_card_labels = [2] * len(vacuum_sucking_card_readings)
+
+# Combine sensor readings and labels into a single dataset
+X = []
+for arr in (vacuum_off_readings, vacuum_on_readings, vacuum_sucking_card_readings):
+    for sub in arr:
+        X.append(sub)
+y = np.concatenate((vacuum_off_labels, vacuum_on_labels, vacuum_sucking_card_labels))
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+# Train a support vector machine (SVM) model on the training data
+clf = SVC()
+clf.fit(X_train, y_train)
+# Evaluate the model on the test data
+y_pred = clf.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print("Current Sensor SVM Accuracy:", accuracy)
+
 if __name__ == "__main__":
     serials = glob.glob("/dev/tty.usbserial-*")
     if not serials:
@@ -239,14 +355,16 @@ if __name__ == "__main__":
     for s in serials:
         try:
             ser = serial.Serial(s, 115200)
-            time.sleep(2)
             wait_till_on(ser)
-            response = check_status(ser)
-            print(s, response)
-            if "MPos:" in response:
-                grbl = ser
-            elif "ARDUINO" in response:
-                arduino = ser
+            print("ON ", s)
+            while True:
+                response = check_status(ser)
+                if "MPos:" in response:
+                    grbl = ser
+                    break
+                elif "ARDUINO" in response:
+                    arduino = ser
+                    break
         except Exception:
             print("nothing", s)
             pass
@@ -263,8 +381,11 @@ if __name__ == "__main__":
     wait_till_ready()
     home()
     wait_till_ready()
+    pick_up()
+    wait_till_ready()
+    release()
 
-    move_card((0, 0), (0, 1), cap)
+    # move_card((0, 0), (0, 1), cap)
     # pick_up()
     # breakpoint()
     # print(get_position())

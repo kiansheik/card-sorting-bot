@@ -1,11 +1,12 @@
 import json
+import os
 import random
+
 import cv2
 import imgaug as ia
 import imgaug.augmenters as iaa
 import imutils
 import numpy as np
-import os
 import pandas as pd
 from PIL import Image
 from tqdm import tqdm
