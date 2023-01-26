@@ -10,6 +10,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from tqdm import tqdm
 
+SAMPLE_WINDOW_SIZE = 100
+Z_STEP_OFF = 20
 grbl = None
 arduino = None
 
@@ -19,6 +21,7 @@ def wait_till_ready():
     ser.flushOutput()
     while True:
         grbl.write(b"?\r")
+        time.sleep(0.02)
         status = grbl.readline().decode()
         if "Idle" in status:
             time.sleep(0.025)
@@ -212,29 +215,29 @@ def home():
     # Home z
     status = check_status(grbl)
     while "Pn:" not in status or "Z" not in status[1:-1].split("Pn:")[1].split("|")[0]:
-        step(3, "Z", "+")
+        step(5, "Z", "+")
         wait_till_ready()
         status = check_status(grbl)
-    step(14, "Z", "-")
+    step(Z_STEP_OFF, "Z", "-")
     # Home x
     status = check_status(grbl)
     while "Pn:" not in status or "X" not in status[1:-1].split("Pn:")[1].split("|")[0]:
-        step(1, "X", "+")
+        step(2, "X", "+")
         wait_till_ready()
         status = check_status(grbl)
     step(4, "X", "-")
     # Home y
     status = check_status(grbl)
     while "Pn:" not in status or "Y" not in status[1:-1].split("Pn:")[1].split("|")[0]:
-        step(1, "Y", "-")
+        step(2, "Y", "-")
         wait_till_ready()
         status = check_status(grbl)
     step(4, "Y", "+")
     reset_zero()
 
 
-def vacuum_on():
-    vacuum_on_cmd = b"G1 F4000 M03 S280\r"
+def vacuum_on(speed=280):
+    vacuum_on_cmd = f"G1 F4000 M03 S{speed}\r".encode()
     grbl.write(vacuum_on_cmd)
     wait_till_ready()
 
@@ -245,26 +248,38 @@ def vacuum_off():
     wait_till_ready()
 
 
+def shake():
+    vacuum_on(400)
+    arduino.flushInput()
+    arduino.flushOutput()
+    arduino.write(b"SHAKE\r")
+    time.sleep(0.1)
+    status = ""
+    while "SHOOK" not in status:
+        status += arduino.readline().decode()
+    vacuum_off()
+
+
 def pick_up():
     # Home x
     vacuum_on()
     wait_till_ready()
     step(40, "Z", "-")
     wait_till_ready()
-    time.sleep(1.5)
+    time.sleep(0.5)
     while not card_on():
-        wait_till_ready()
-        step(5, "Z", "-")
-        time.sleep(0.2)
-    vacuum_off()
+        # wait_till_ready()
+        step(10, "Z", "-")
     go_to(z=0)
+    wait_till_ready()
+    shake()
+    vacuum_off()
     wait_till_ready()
 
 
 def card_on():
     subarray = []
     # Throw away first array in case it's incomplete
-    second = False
     arduino.flushInput()
     arduino.flushOutput()
     time.sleep(0.1)
@@ -273,13 +288,12 @@ def card_on():
     while True:
         line = arduino.readline().decode()
         if "FIN" in line.strip():
-            if second and len(subarray) == len(X_train[0]):
+            if len(subarray) == len(X_train[0]):
                 res = clf.predict([subarray])
                 print(res)
                 return 2 in res
             print(subarray)
             subarray = []
-            second = True
         else:
             try:
                 subarray.append(int(line.split(" ")[0].strip()))
@@ -308,7 +322,7 @@ def store_integers_from_file(filepath):
         subarray = []
         for line in file:
             if "FIN" in line.strip():
-                if len(subarray) == 50:
+                if len(subarray) == SAMPLE_WINDOW_SIZE:
                     subarrays.append(subarray)
                 subarray = []
             else:
@@ -379,11 +393,14 @@ if __name__ == "__main__":
     # Open a connection to the webcam
     cap = cv2.VideoCapture(0)
     wait_till_ready()
-    home()
-    wait_till_ready()
-    pick_up()
-    wait_till_ready()
-    release()
+    reset_zero()
+    # home()
+    # release()
+    # wait_till_ready()
+    # t1 = time.time()
+    # pick_up()
+    # wait_till_ready()
+    # print(time.time() - t1)
 
     # move_card((0, 0), (0, 1), cap)
     # pick_up()

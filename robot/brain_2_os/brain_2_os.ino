@@ -24,7 +24,7 @@ const int analogInPin = A0;
 
 // Number of samples to average the reading over
 // Change this to make the reading smoother... but beware of buffer overflows!
-const long avgSamples = 50;
+const long avgSamples = 100;
 const int card_on_thresh = 1;
 long sensorValue = 0;
 long cardOn = 0;
@@ -40,24 +40,12 @@ void setup() {
 }
 
 void print_current_vals(){
-  for(int j=0;j<2;j++){
-    unsigned long min = 10000;
-    unsigned long max = 0;
-    double avg = 0;
-    Serial.flush();
-    for (int j = 0; j < avgSamples; j++) {
-      long current = analogRead(analogInPin);
-      Serial.print(current);
-      Serial.println(" ARDUINO");
-      if(current < min){
-        min = current;
-      }  
-      if(current > max){
-        max = current;
-      }
-      avg += current;
-      delay(2);
-    }
+  for(int i=0;i<1;i++){
+      for (int j = 0; j < avgSamples; j++) {        
+        Serial.print(analogRead(analogInPin));
+        Serial.println(" ARDUINO");  
+          delay(2);
+        }
     Serial.println("FIN ARDUINO");  
   }
 }
@@ -77,12 +65,10 @@ void loop() {
 }
 
 void processData(char* data) {
+  bool normal = LOW;
   String input = String(data);
     if (input.indexOf("RELEASE") > -1) {
-    //   // do something when the command "RELEASE" is received
-      bool normal = LOW;
       digitalWrite(11, !normal);
-      // Serial.print(!normal);
       delay(900);
       digitalWrite(11, normal);
       Serial.println("RELEASED");
@@ -90,5 +76,17 @@ void processData(char* data) {
       Serial.println("ARDUINO");      
     } else if (input.indexOf("CURRENT") > -1){
       print_current_vals();
+    } else if (input.indexOf("SHAKE") > -1) {
+      int shakes = 2;
+      delay(600);
+      digitalWrite(11, !normal);
+      delay(500);
+      for (int i=0;i<shakes;i++){        
+        digitalWrite(11, !normal);
+        delay(450);
+        digitalWrite(11, normal);
+        delay(250);
+      }
+      Serial.println("SHOOK");      
     }
 }

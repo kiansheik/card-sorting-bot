@@ -19,13 +19,6 @@ def get_aruco_bbox(cap, marker_id):
         frame = cv2.flip(frame, 1)  # flip the image vertically
         frame = cv2.transpose(frame)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # convert to grayscale
-        # gray = cv2.adaptiveThreshold(
-        #     gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 101, 1
-        # )
-        # gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[
-        #     1
-        # ]
-
         # Detect aruco markers
         aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
         parameters = cv2.aruco.DetectorParameters_create()
@@ -34,17 +27,54 @@ def get_aruco_bbox(cap, marker_id):
         )
         # Draw bounding boxes around detected markers
         if corners:
+            rvecs, tvecs, _objPoints = cv2.aruco.estimatePoseSingleMarkers(
+                corners, 0.05, camera_matrix, dist_coeffs
+            )
             for i in range(len(ids)):
-                # if ids[i] == marker_id:
-                corner = corners[i]
-                x, y, w, h = cv2.boundingRect(corner)
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-                print(ids[i])
-                # return (x, y, w, h), (frame.shape)
+                corner = corners[i].reshape(-1, 2)
+                rect = cv2.minAreaRect(corner)
+                box = cv2.boxPoints(rect)
+                box = np.int0(box)
+                cv2.drawContours(frame, [box], 0, (0, 0, 255), 2)
+        corner = leftmost_highest(corners, frame)
+        rect = cv2.minAreaRect(corner)
+        box = cv2.boxPoints(rect)
+        box = np.int0(box)
+        frame = crop_based_on_aruco(box, frame)
+
         cv2.imshow("Aruco Markers", frame)
         # Break the loop if the 'q' key is pressed
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
+
+
+def leftmost_highest(bboxes, img):
+    leftmost_x = img.shape[1]  # Initialize with the maximum width of the image
+    highest_y = img.shape[0]  # Initialize with the maximum height of the image
+    leftmost_highest_bbox = None
+    for bbox in bboxes:
+        (x1, y1), (x2, y2), (x3, y3), (x4, y4) = bbox.reshape(-1, 2)
+        x = min(x1, x2, x3, x4)
+        y = min(y1, y2, y3, y4)
+        if x < leftmost_x and y < highest_y:
+            leftmost_x = x
+            highest_y = y
+            leftmost_highest_bbox = bbox
+    return leftmost_highest_bbox
+
+
+def crop_based_on_aruco(bbox, img):
+    (x1, y1), (x2, y2), (x3, y3), (x4, y4) = bbox
+    center_x = int((x1 + x2 + x3 + x4) / 4)
+    center_y = int((y1 + y2 + y3 + y4) / 4)
+
+    # Draw horizontal line
+    cv2.line(img, (0, center_y), (img.shape[1], center_y), (0, 255, 0), 2)
+
+    # Draw vertical line
+    cv2.line(img, (center_x, 0), (center_x, img.shape[0]), (0, 255, 0), 2)
+
+    return img[center_y:, center_x:]
 
 
 if __name__ == "__main__":

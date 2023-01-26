@@ -28,7 +28,7 @@ def check_status(ser):
 
 arduino = serial.Serial("/dev/tty.usbserial-1420", 115200)
 states = ("vacuum_off", "vacuum_on", "card_on")
-tl = (50 * 10) * 60
+tl = (100 * 10) * 60
 for state in states:
     print(f"Set to state: {state} then press 'c'...")
     breakpoint()
@@ -36,7 +36,7 @@ for state in states:
     for i in range(10000):
         arduino.read_all()
     for i in tqdm(range(tl)):
-        if i % (51 * 2) == 0:
+        if i % (101 * 2) == 0:
             arduino.write(b"CURRENT\r")
             time.sleep(0.2)
         ln = arduino.readline().decode()
