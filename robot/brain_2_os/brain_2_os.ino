@@ -17,6 +17,7 @@
     - A power supply with current limiting/constant current would be handy to calibrate the device without using resistors
 */
 #define BUFFER_SIZE 64
+#define VACUUM_PIN 10
 char buffer[BUFFER_SIZE];
 int bufferIndex = 0;
 
@@ -28,6 +29,7 @@ const long avgSamples = 100;
 const int card_on_thresh = 1;
 long sensorValue = 0;
 long cardOn = 0;
+long min = 100000;
 bool vacuumOff = true;
 float sensitivity = 100.0 / 500.0; //100mA per 500mV = 0.2
 float Vref = 2500; // Output voltage with no current: ~ 2500mV or 2.5V
@@ -37,18 +39,34 @@ void setup() {
   Serial.begin(115200);
   pinMode(12, OUTPUT);
   pinMode(11, OUTPUT);
+  pinMode(VACUUM_PIN, OUTPUT);
+  calibrate_vacuum();
 }
 
 void print_current_vals(){
   for(int i=0;i<1;i++){
       for (int j = 0; j < avgSamples; j++) {        
-        Serial.print(analogRead(analogInPin));
+        Serial.print(((long)analogRead(analogInPin))- min);
         Serial.println(" ARDUINO");  
           delay(2);
         }
     Serial.println("FIN ARDUINO");  
   }
 }
+
+void calibrate_vacuum(){
+  digitalWrite(VACUUM_PIN, LOW);
+  int current = 0;
+  for(int i=0;i<avgSamples*10;i++){
+    current = analogRead(analogInPin);
+    if (current < min){
+      min = current;
+    }
+    delay(2);
+  }      
+  Serial.println("VACUUM_CALIBRATED");  
+}
+
 
 void loop() {
   if (Serial.available() > 0) {
@@ -62,12 +80,15 @@ void loop() {
       bufferIndex = 0;
     }
   }
+  // print_current_vals();
 }
 
 void processData(char* data) {
   bool normal = LOW;
   String input = String(data);
-    if (input.indexOf("RELEASE") > -1) {
+    if (input.indexOf("RELEASE_PERM") > -1) {
+      digitalWrite(11, !normal);
+    } else if (input.indexOf("RELEASE") > -1) {
       digitalWrite(11, !normal);
       delay(900);
       digitalWrite(11, normal);
@@ -76,6 +97,12 @@ void processData(char* data) {
       Serial.println("ARDUINO");      
     } else if (input.indexOf("CURRENT") > -1){
       print_current_vals();
+    } else if (input.indexOf("VACUUM_ON") > -1){
+      digitalWrite(VACUUM_PIN, HIGH);
+      Serial.println("VACUUM_ON");  
+    } else if (input.indexOf("VACUUM_OFF") > -1){
+      digitalWrite(VACUUM_PIN, LOW);
+      Serial.println("VACUUM_OFF");  
     } else if (input.indexOf("SHAKE") > -1) {
       int shakes = 2;
       delay(600);
@@ -88,5 +115,7 @@ void processData(char* data) {
         delay(250);
       }
       Serial.println("SHOOK");      
+    } else if (input.indexOf("CALIBRATE_VACUUM") > -1) {
+        calibrate_vacuum();      
     }
 }

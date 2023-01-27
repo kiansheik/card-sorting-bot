@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from tqdm import tqdm
 
+
 SAMPLE_WINDOW_SIZE = 100
 Z_STEP_OFF = 20
 grbl = None
@@ -21,14 +22,10 @@ with open("calibration_images/calibration.json") as f:
     dist_coeffs = np.array(calib["dist_coeff"])
 
 def wait_till_ready():
-    ser.flushInput()
-    ser.flushOutput()
     while True:
-        grbl.write(b"?\r")
-        time.sleep(0.02)
-        status = grbl.readline().decode()
+        status = check_status(grbl)
         if "Run" in status:
-            pass
+            time.sleep(0.001)
         elif "Idle" in status:
             break
         time.sleep(0.25) # GRBL wiki recommends no more than 5 times per second polling
@@ -41,85 +38,8 @@ def wait_till_on(ser):
     while True:
         status = check_status(ser)
         if len(status) > 4:
-            time.sleep(0.025)
             break
-
-
-# Function to send step command to GRBL device
-def step(steps, axis, direction):
-    if direction not in ["+", "-"]:
-        raise ValueError("Invalid direction")
-    command = f"G21G91{axis}{direction if direction == '-' else ''}{steps-0.001}F6000\r"
-    grbl.write(command.encode())
-
-
-def reset_zero():
-    command = "G10 P0 L20 X0 Y0 Z0\r"
-    grbl.write(command.encode())
-
-
-# Function to send go-to command to GRBL device
-def go_to(x=None, y=None, z=None, relative=False):
-    command = "G21G91" if relative else "G21G90"  # Absolute positioning or relative
-    if x is not None:
-        command += f" X{x}"
-    if y is not None:
-        command += f" Y{y}"
-    if z is not None:
-        command += f" Z{z}"
-    if x is not None or y is not None:
-        grbl.write("G90 Z0\r".encode())
-        wait_till_ready()
-    grbl.write(f"{command}F6000\r".encode())
-
-
-# Function to parse GRBL status and check for alarms
-def check_status(ser):
-    ser.flushInput()
-    ser.flushOutput()
-    time.sleep(0.1)
-    ser.write(b"?\r")
-    time.sleep(0.1)
-    status = ser.read_all().decode()
-    if ser == grbl:
-        while "MPos" not in status:
-            status = grbl.readline().decode()
-    if ser == arduino:
-        while "ARDUINO" not in status:
-            status = arduino.readline().decode()
-    return status
-
-
-def find_center(x, y, w, h):
-    center_x = x + (w / 2)
-    center_y = y + (h / 2)
-    return center_x, center_y
-
-
-def get_qr_bbox(cap):
-    while True:
-        # Read a frame from the webcam
-        ret, frame = cap.read()
-        if not ret:
-            return None
-        frame = cv2.flip(frame, -1)  # flip the image vertically
-        adap = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # convert to grayscale
-        adap = cv2.adaptiveThreshold(
-            adap, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 101, 1
-        )
-        adap = cv2.threshold(adap, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[
-            1
-        ]  # thresholding
-        qr_codes = pyzbar.decode(adap)
-        cv2.imshow("QR Code", adap)
-        # Break the loop if the 'q' key is pressed
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
-        # Iterate through the detected QR codes
-        for qr_code in qr_codes:
-            # Get the bounding box coordinates of the QR code
-            # cv2.putText(adap, 1, tuple(find_center(959, 455, 319, 322)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-            return (qr_code.rect), (adap.shape)
+        time.sleep(0.25)
 
 def average_side_length(bounding_box):
     # Get the x,y coordinates of the bounding box
@@ -181,23 +101,6 @@ def get_aruco_bboxes(cap, camera_matrix, dist_coeffs, aruco_id=None):
                 boxes[ids[i][0]] = box
     return boxes, frame
 
-def closest_tag(tags, target_point):
-    closest_tag = None
-    closest_distance = float('inf')
-    for aruco_id, bounding_box in tags.items():
-        # Get the center of the bounding box
-        center = np.array([(bounding_box[0] + bounding_box[2]) / 2, (bounding_box[1] + bounding_box[3]) / 2])
-        
-        # Calculate the distance between the center of the bounding box and the target point in pixels
-        distance = np.linalg.norm(center - target_point)
-        
-        # Update the closest tag and distance if necessary
-        if distance < closest_distance:
-            closest_distance = distance
-            closest_tag = aruco_id
-    
-    return closest_tag
-
 def target_closest_aruco(cap, camera_matrix, dist_coeffs, stack_id):
     initial_jog, aruco_target, aruco_id = calibrations[stack_id]
     go_to(x=initial_jog[0], y=initial_jog[1])
@@ -225,57 +128,19 @@ def target_closest_aruco(cap, camera_matrix, dist_coeffs, stack_id):
             # print('aruco_target', aruco_target)
             x_dist, y_dist = distance_from_target(bboxes[aruco_id], aruco_target)
 
-
-
-
-calibrations = {
-    # Format: (stack_row, stack_col): [(stepper_mm_x, stepper_mm_y), (aruco_center_target_x, aruco_center_target_y), aruco_id]
-    (0, 0): [(-53.975, 77.638), (179, 727), 0],
-    (0, 1): [(-139.823, 71.882), (102, 646), 49],
-    (0, 2): [(-226.401, 72.876), (96, 634), 48],
-    (0, 3): [(-308.324, 83.872), (915, 683), 48],
-
-
-    (1, 0): [(-52.959, 181.817), (178, 662), 39, 39],
-    (1, 1): [(-143.873, 183.817), (194, 677), 2],
-    (1, 2): [(-227.497, 186.824), (136, 704), 42],
-    (1, 3): [(-306.427, 181.829), (907, 646), 42],
-}
-
-
-def map_function(x, in_min, in_max, out_min, out_max):
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
-
-
 def get_position():
-    grbl.flushInput()
-    grbl.flushOutput()
-    grbl.write(b"?\r")
-    time.sleep(0.1)
-    status = ""
+    status = check_status(grbl)
     while "MPos" not in status:
-        status += grbl.readline().decode()
-    if "MPos" in status:
-        position = status.split("MPos:")[1].split("|")[0].strip()
-        x, y, z = [float(val) for val in position.split(",")]
-        return x, y, z
-    else:
-        print("Cannot get current position.")
+        time.sleep(0.2)
+        status = check_status(grbl)
+    position = status.split("MPos:")[1].split("|")[0].strip()
+    x, y, z = [float(val) for val in position.split(",")]
+    return x, y, z
 
 
-def align_stack(stack_id, cap, thresh=25):
-    target_closest_aruco(cap, camera_matrix, dist_coeffs, stack_id)
 
 
-def release():
-    vacuum_off()
-    arduino.flushInput()
-    arduino.flushOutput()
-    arduino.write(b"RELEASE\r")
-    time.sleep(0.1)
-    status = ""
-    while "RELEASED" not in status:
-        status += arduino.readline().decode()
+
 
 
 def home():
@@ -303,48 +168,9 @@ def home():
     reset_zero()
 
 
-def vacuum_on(speed=280):
-    # vacuum_on_cmd = f"G1 F4000 M03 S{speed}\r".encode()
-    # grbl.write(vacuum_on_cmd)
-    # wait_till_ready()
-    vacuum_on_cmd = f"VACUUM_ON\r".encode()
-    arduino.write(vacuum_on_cmd)
-    time.sleep(0.1)
-    status = ""
-    while "VACUUM_ON" not in status:
-        status += arduino.readline().decode()
-    
-
-def vacuum_off():
-    # vacuum_off_cmd = b"M05\r"
-    # grbl.write(vacuum_off_cmd)
-    # wait_till_ready()
-    vacuum_off_cmd = f"VACUUM_OFF\r".encode()
-    arduino.write(vacuum_off_cmd)
-    time.sleep(0.1)
-    status = ""
-    while "VACUUM_OFF" not in status:
-        status += arduino.readline().decode()
-
-def calibrate_vacuum():
-    vacuum_off_cmd = f"CALIBRATE_VACUUM\r".encode()
-    arduino.write(vacuum_off_cmd)
-    time.sleep(0.1)
-    status = ""
-    while "VACUUM_CALIBRATED" not in status:
-        status += arduino.readline().decode()
 
 
-def shake():
-    vacuum_on(400)
-    arduino.flushInput()
-    arduino.flushOutput()
-    arduino.write(b"SHAKE\r")
-    time.sleep(0.1)
-    status = ""
-    while "SHOOK" not in status:
-        status += arduino.readline().decode()
-    vacuum_off()
+
 
 
 def pick_up():
