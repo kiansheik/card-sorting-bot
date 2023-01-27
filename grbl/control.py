@@ -1,6 +1,7 @@
 import glob
-import time
 import json
+import time
+
 import cv2
 import numpy as np
 import serial
@@ -20,6 +21,7 @@ with open("calibration_images/calibration.json") as f:
     camera_matrix = np.array(calib["camera_matrix"])
     dist_coeffs = np.array(calib["dist_coeff"])
 
+
 def wait_till_ready():
     ser.flushInput()
     ser.flushOutput()
@@ -31,7 +33,7 @@ def wait_till_ready():
             pass
         elif "Idle" in status:
             break
-        time.sleep(0.25) # GRBL wiki recommends no more than 5 times per second polling
+        time.sleep(0.25)  # GRBL wiki recommends no more than 5 times per second polling
 
 
 def wait_till_on(ser):
@@ -121,6 +123,7 @@ def get_qr_bbox(cap):
             # cv2.putText(adap, 1, tuple(find_center(959, 455, 319, 322)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
             return (qr_code.rect), (adap.shape)
 
+
 def average_side_length(bounding_box):
     # Get the x,y coordinates of the bounding box
     (x1, y1), (x2, y2), (x3, y3), (x4, y4) = bounding_box
@@ -130,22 +133,27 @@ def average_side_length(bounding_box):
     bottom = np.linalg.norm(np.array([x3, y3]) - np.array([x4, y4]))
     left = np.linalg.norm(np.array([x4, y4]) - np.array([x1, y1]))
     # Average of all sides
-    average = (top + right + bottom + left)/4
+    average = (top + right + bottom + left) / 4
     return average
+
 
 def distance_from_target(bounding_box, target_point, real_tag_size=6.3):
     # Get the center of the bounding box
-    center = (sum([x[0] for x in bounding_box])//len(bounding_box), sum([y[1] for y in bounding_box])//len(bounding_box))
-    
+    center = (
+        sum([x[0] for x in bounding_box]) // len(bounding_box),
+        sum([y[1] for y in bounding_box]) // len(bounding_box),
+    )
+
     # Calculate the x and y distances between the center of the bounding box and the target point in pixels
     x_distance = center[0] - target_point[0]
     y_distance = center[1] - target_point[1]
-    
+
     # Convert the distance in pixels to millimeters using the real tag size
     x_distance_mm = x_distance * real_tag_size / average_side_length(bounding_box)
     y_distance_mm = y_distance * real_tag_size / average_side_length(bounding_box)
-    
-    return x_distance_mm, -1*y_distance_mm
+
+    return x_distance_mm, -1 * y_distance_mm
+
 
 def get_aruco_bboxes(cap, camera_matrix, dist_coeffs, aruco_id=None):
     boxes = dict()
@@ -181,37 +189,44 @@ def get_aruco_bboxes(cap, camera_matrix, dist_coeffs, aruco_id=None):
                 boxes[ids[i][0]] = box
     return boxes, frame
 
+
 def closest_tag(tags, target_point):
     closest_tag = None
-    closest_distance = float('inf')
+    closest_distance = float("inf")
     for aruco_id, bounding_box in tags.items():
         # Get the center of the bounding box
-        center = np.array([(bounding_box[0] + bounding_box[2]) / 2, (bounding_box[1] + bounding_box[3]) / 2])
-        
+        center = np.array(
+            [
+                (bounding_box[0] + bounding_box[2]) / 2,
+                (bounding_box[1] + bounding_box[3]) / 2,
+            ]
+        )
+
         # Calculate the distance between the center of the bounding box and the target point in pixels
         distance = np.linalg.norm(center - target_point)
-        
+
         # Update the closest tag and distance if necessary
         if distance < closest_distance:
             closest_distance = distance
             closest_tag = aruco_id
-    
+
     return closest_tag
+
 
 def target_closest_aruco(cap, camera_matrix, dist_coeffs, stack_id):
     initial_jog, aruco_target, aruco_id = calibrations[stack_id]
     go_to(x=initial_jog[0], y=initial_jog[1])
     wait_till_ready()
-    time.sleep(.5)
+    time.sleep(0.5)
     bboxes, frame = get_aruco_bboxes(cap, camera_matrix, dist_coeffs, aruco_id=aruco_id)
     print(bboxes)
     if len(bboxes) > 0:
-        print('boxes', bboxes)
-        print('aruco_target', aruco_target)
+        print("boxes", bboxes)
+        print("aruco_target", aruco_target)
         x_dist, y_dist = distance_from_target(bboxes[aruco_id], aruco_target)
         # modify to stick with closest tag
         thresh = 4
-        while abs(x_dist+y_dist) > thresh*2:
+        while abs(x_dist + y_dist) > thresh * 2:
             print(x_dist, y_dist)
             # breakpoint()
             go_to(x=x_dist, y=y_dist, relative=True)
@@ -220,12 +235,12 @@ def target_closest_aruco(cap, camera_matrix, dist_coeffs, stack_id):
             # if abs(y_dist) > thresh:
             #     step(abs(y_dist), 'y', '+' if y_dist > 0 else '-')
             wait_till_ready()
-            bboxes, frame = get_aruco_bboxes(cap, camera_matrix, dist_coeffs, aruco_id=aruco_id)
+            bboxes, frame = get_aruco_bboxes(
+                cap, camera_matrix, dist_coeffs, aruco_id=aruco_id
+            )
             # print('boxes', bboxes)
             # print('aruco_target', aruco_target)
             x_dist, y_dist = distance_from_target(bboxes[aruco_id], aruco_target)
-
-
 
 
 calibrations = {
@@ -234,8 +249,6 @@ calibrations = {
     (0, 1): [(-139.823, 71.882), (102, 646), 49],
     (0, 2): [(-226.401, 72.876), (96, 634), 48],
     (0, 3): [(-308.324, 83.872), (915, 683), 48],
-
-
     (1, 0): [(-52.959, 181.817), (178, 662), 39, 39],
     (1, 1): [(-143.873, 183.817), (194, 677), 2],
     (1, 2): [(-227.497, 186.824), (136, 704), 42],
@@ -313,7 +326,7 @@ def vacuum_on(speed=280):
     status = ""
     while "VACUUM_ON" not in status:
         status += arduino.readline().decode()
-    
+
 
 def vacuum_off():
     # vacuum_off_cmd = b"M05\r"
@@ -325,6 +338,7 @@ def vacuum_off():
     status = ""
     while "VACUUM_OFF" not in status:
         status += arduino.readline().decode()
+
 
 def calibrate_vacuum():
     vacuum_off_cmd = f"CALIBRATE_VACUUM\r".encode()
@@ -395,7 +409,7 @@ def move_card(stack_id_1, stack_id_2, cap):
     align_stack(stack_id_2, cap)
     wait_till_ready()
     go_to(z=-60, relative=True)
-    time.sleep(1000/1000)
+    time.sleep(1000 / 1000)
     # step(60, "Z", "-")
     wait_till_ready()
     release()

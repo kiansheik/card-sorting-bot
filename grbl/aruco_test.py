@@ -36,15 +36,23 @@ def get_aruco_bbox(cap, marker_id):
                 box = cv2.boxPoints(rect)
                 box = np.int0(box)
                 cv2.drawContours(frame, [box], 0, (0, 0, 255), 2)
-                
-                #Calculate the center of the bounding box
-                center_x = sum([x[0] for x in box])//len(box)
-                center_y = sum([y[1] for y in box])//len(box)
+
+                # Calculate the center of the bounding box
+                center_x = sum([x[0] for x in box]) // len(box)
+                center_y = sum([y[1] for y in box]) // len(box)
                 center = (center_x, center_y)
                 print(f"{center}, {ids[i][0]}")
                 # Write the ID of the Aruco marker in the center of the bounding box
-                cv2.putText(frame, str(ids[i][0]), center, cv2.FONT_HERSHEY_SIMPLEX, 
-                            0.5, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(
+                    frame,
+                    str(ids[i][0]),
+                    center,
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (255, 255, 255),
+                    2,
+                    cv2.LINE_AA,
+                )
         # corner = leftmost_highest(corners, frame)
         # rect = cv2.minAreaRect(corner)
         # box = cv2.boxPoints(rect)

@@ -31,7 +31,7 @@ states = ("vacuum_off", "vacuum_on", "card_on")
 tl = (100 * 10) * 30
 for state in states:
     print(f"Set to state: {state} then press 'c'...")
-    if 'vacuum' in state:
+    if "vacuum" in state:
         arduino.write(f"{state.upper()}\n".encode())
         time.sleep(1)
     breakpoint()
@@ -39,7 +39,7 @@ for state in states:
     for i in range(10000):
         arduino.read_all()
     for i in tqdm(range(tl)):
-        if state != 'card_on':
+        if state != "card_on":
             if i % (500 * 5) == 0:
                 arduino.write(b"VACUUM_OFF\r")
                 time.sleep(0.2)
