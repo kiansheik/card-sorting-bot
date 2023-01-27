@@ -2,8 +2,10 @@ import glob
 import json
 import time
 
+import aruco
 import cv2
 import numpy as np
+import pressure_svm as psvm
 import serial
 from pyzbar import pyzbar
 from sklearn.metrics import accuracy_score
@@ -11,22 +13,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from tqdm import tqdm
 
-SAMPLE_WINDOW_SIZE = 100
 GRBL_POLL_TIME = 0.25
 Z_STEP_OFF = 20
-
-calibrations = {
-    # (stack_id) are the key
-    # Format: (stack_row, stack_col): [(stepper_mm_x, stepper_mm_y), (aruco_center_target_x, aruco_center_target_y), aruco_id]
-    (0, 0): [(-53.975, 77.638), (179, 727), 0],
-    (0, 1): [(-139.823, 71.882), (102, 646), 49],
-    (0, 2): [(-226.401, 72.876), (96, 634), 48],
-    (0, 3): [(-308.324, 83.872), (915, 683), 48],
-    (1, 0): [(-52.959, 181.817), (178, 662), 39],
-    (1, 1): [(-143.873, 183.817), (194, 677), 2],
-    (1, 2): [(-227.497, 186.824), (136, 704), 42],
-    (1, 3): [(-306.427, 181.829), (907, 646), 42],
-}
 
 
 def serial_write(ser, msg):
@@ -36,34 +24,59 @@ def serial_write(ser, msg):
     time.sleep(0.02)
 
 
+def wait_till_on(ser):
+    # time.sleep(0.5)
+    while True:
+        status = check_status(ser)
+        if len(status) > 4:
+            break
+        time.sleep(GRBL_POLL_TIME)
+
+
+# Function to parse GRBL status and check for alarms
+def check_status(ser):
+    serial_write(ser, "?")
+    status = ser.read_line().decode()
+    return status
+
+
 class GRBL_Controller:
-    def __init__(self):
-        self.grbl = None
-        self.arduino = None
+    def __init__(self, grbl, arduino, cap):
+        self.grbl = arduino
+        self.arduino = grbl
+        self.cap = cap
         self.calibrations = {
+            # (stack_id) are the key
+            # Format: (stack_row, stack_col): [(stepper_mm_x, stepper_mm_y), (aruco_center_target_x, aruco_center_target_y), aruco_id]
             (0, 0): [(-53.975, 77.638), (179, 727), 0],
             (0, 1): [(-139.823, 71.882), (102, 646), 49],
             (0, 2): [(-226.401, 72.876), (96, 634), 48],
             (0, 3): [(-308.324, 83.872), (915, 683), 48],
-            (1, 0): [(-52.959, 181.817), (178, 662), 39, 39],
+            (1, 0): [(-52.959, 181.817), (178, 662), 39],
             (1, 1): [(-143.873, 183.817), (194, 677), 2],
             (1, 2): [(-227.497, 186.824), (136, 704), 42],
             (1, 3): [(-306.427, 181.829), (907, 646), 42],
         }
+        self.aruco_locator = aruco.ArucoLocator(
+            cap, "calibration_images/calibration.json"
+        )
+
+    def init(self):
+        self.wait_till_ready()
+        self.release()
+        self.home()
+        self.calibrate_vacuum()
+        self.wait_till_ready()
+
+    def deinit(self):
+        self.go_to(0, 0, 0)
+
+    def wait_till_on(self, ser):
+        wait_till_on(ser)
 
     # Function to parse GRBL status and check for alarms
     def check_status(self, ser):
-        serial_write(ser, "?")
-        status = ser.read_line().decode()
-        return status
-
-    def wait_till_on(self, ser):
-        time.sleep(0.5)
-        while True:
-            status = self.check_status(ser)
-            if len(status) > 4:
-                break
-            time.sleep(GRBL_POLL_TIME)
+        return check_status(ser)
 
     def wait_till_ready(self):
         while True:
@@ -112,8 +125,39 @@ class GRBL_Controller:
         x, y, z = [float(val) for val in position.split(",")]
         return x, y, z
 
-    # def align_stack(stack_id, cap, thresh=25):
-    #     target_closest_aruco(cap, camera_matrix, dist_coeffs, stack_id)
+    def home(self):
+        # Home z
+        status = self.check_status(self.grbl)
+        while (
+            "Pn:" not in status or "Z" not in status[1:-1].split("Pn:")[1].split("|")[0]
+        ):
+            self.step(2, "Z", "+")
+            self.wait_till_ready()
+            status = self.check_status(self.grbl)
+        self.step(Z_STEP_OFF, "Z", "-")
+        # Home x
+        status = self.check_status(self.grbl)
+        while (
+            "Pn:" not in status or "X" not in status[1:-1].split("Pn:")[1].split("|")[0]
+        ):
+            self.step(2, "X", "+")
+            self.wait_till_ready()
+            status = self.check_status(self.grbl)
+        self.step(4, "X", "-")
+        # Home y
+        status = self.check_status(self.grbl)
+        while (
+            "Pn:" not in status or "Y" not in status[1:-1].split("Pn:")[1].split("|")[0]
+        ):
+            self.step(2, "Y", "-")
+            self.wait_till_ready()
+            status = self.check_status(self.grbl)
+        self.step(4, "Y", "+")
+        self.reset_zero()
+
+    # def align_stack(stack_id):
+    #     target_closest_aruco(self.cap, camera_matrix, dist_coeffs, stack_id)
+
     def calibrate_vacuum(self):
         serial_write(self.arduino, "CALIBRATE_VACUUM")
         status = ""
@@ -158,8 +202,8 @@ class GRBL_Controller:
         while True:
             line = self.arduino.readline().decode()
             if "FIN" in line.strip():
-                if len(subarray) == len(X_train[0]):
-                    res = clf.predict([subarray])
+                if len(subarray) == len(psvm.X_train[0]):
+                    res = psvm.clf.predict([subarray])
                     return 1 in res
                 print(subarray)
                 subarray = []
@@ -169,5 +213,89 @@ class GRBL_Controller:
                 except Exception:
                     pass
 
+    def move_card(self, stack_id_1, stack_id_2):
+        self.align_stack(stack_id_1)
+        self.wait_till_ready()
+        self.pick_up()
+        self.wait_till_ready()
+        self.align_stack(stack_id_2)
+        self.wait_till_ready()
+        self.go_to(z=-60, relative=True)
+        time.sleep(1000 / 1000)
+        # step(60, "Z", "-")
+        self.wait_till_ready()
+        self.release()
+        self.go_to(z=0)
+        self.wait_till_ready()
 
-# TODO: add SVM, Aruco tags, and MaskRCNN to their own files and import them for integration
+    def target_closest_aruco(self, stack_id):
+        initial_jog, aruco_target, aruco_id = self.calibrations[stack_id]
+        self.go_to(x=initial_jog[0], y=initial_jog[1])
+        self.wait_till_ready()
+        bboxes, frame = self.aruco_locator.get_aruco_bboxes(aruco_id=aruco_id)
+        if len(bboxes) > 0:
+            print("boxes", bboxes)
+            print("aruco_target", aruco_target)
+            x_dist, y_dist = aruco.distance_from_target(bboxes[aruco_id], aruco_target)
+            # modify to stick with closest tag
+            thresh = 3
+            while abs(x_dist + y_dist) > thresh * 2:
+                print(x_dist, y_dist)
+                self.go_to(x=x_dist, y=y_dist, relative=True)
+                self.wait_till_ready()
+                bboxes, frame = self.aruco_locator.get_aruco_bboxes(aruco_id=aruco_id)
+                # print('boxes', bboxes)
+                # print('aruco_target', aruco_target)
+                x_dist, y_dist = aruco.distance_from_target(
+                    bboxes[aruco_id], aruco_target
+                )
+        self.wait_till_ready()
+
+
+# TODO: add SVM and MaskRCNN to their own files and import them for integration
+
+
+if __name__ == "__main__":
+    arduino = None
+    grbl = None
+    serials = glob.glob("/dev/tty.usbserial-*")
+    if not serials:
+        raise Exception("No serial connections found")
+    # Query each serial connection
+    for s in serials:
+        try:
+            ser = serial.Serial(s, 115200)
+            wait_till_on(ser)
+            while True:
+                response = check_status(ser)
+                if "MPos:" in response:
+                    grbl = ser
+                    break
+                elif "ARDUINO" in response:
+                    arduino = ser
+                    break
+        except Exception:
+            print("nothing", s)
+            pass
+    # Raise an error if both grbl and arduino are not found
+    if grbl is None or arduino is None:
+        print(grbl, arduino)
+        raise Exception("Unable to find both grbl and arduino")
+
+    else:
+        print("grbl connection: ", grbl)
+        print("arduino connection: ", arduino)
+    # Open a connection to the webcam
+    cap = cv2.VideoCapture(0)
+
+    robot = GRBL_Controller(grbl, arduino, cap)
+
+    robot.init()
+
+    robot.move_card((1, 1), (1, 2))
+    time.sleep(2)
+    robot.move_card((1, 2), (1, 1))
+
+    print("Enter 'c' to return robot to home and exit...")
+    breakpoint()
+    robot.deinit()
