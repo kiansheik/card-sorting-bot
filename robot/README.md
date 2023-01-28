@@ -26,16 +26,45 @@
 The GRBL_Controller class is a python wrapper for controlling a [GRBL](https://github.com/gnea/grbl) device using the [Serial library](https://pyserial.readthedocs.io/en/latest/pyserial.html).
 
 ## Methods
-- __init__(self, grbl, arduino, cap)
-- init(self)
-- deinit(self)
-- wait_till_on(self, ser)
-- check_status(self, ser)
-- wait_till_ready(self)
-- step(self, steps, axis, direction)
-- reset_zero(self)
-- go_to(self, x=None, y=None, z=None, relative=False)
-- release(self)
-- home(self)
-- calibrate_vacuum(self)
-- detect_card(self, (row, col))
+
+ - `__init__(self, grbl, arduino, cap)`
+    - Initializes the class with a GRBL serial connection, an arduino serial connection, and a cv2 capture object.
+
+ - `init(self)`
+    - Initializes the GRBL device and calibrates the vacuum.
+
+ - `deinit(self)`
+    - Deinitializes the GRBL device and returns it to home.
+
+ - `wait_till_on(self, ser)`
+    - Waits until the serial device is on.
+
+ - `check_status(self, ser)`
+    - Returns the `?` command status of the serial device.
+
+ - `wait_till_ready(self)`
+    - Waits until the GRBL device is ready to receive commands.
+
+ - `step(self, steps, axis, direction)`
+    - Sends a step command to the GRBL device.
+
+ - `reset_zero(self)`
+    - Resets zero position to current position.
+
+ - `go_to(self, x=None, y=None, z=None, relative=False)`
+    - Sends a go-to command to the GRBL device. relative=True is equal to step and maybe they will be merged
+
+ - `release(self)`
+    - Releases vacuum.
+
+ - `home(self)`
+    - Homes the GRBL device.
+
+ - `calibrate_vacuum(self)`
+    - Calibrates the vacuum sensor value, must be called when vacuum is off.
+
+ - `detect_card(self, x, y)`
+    - Attempts to detect a card at the given x, y position.
+
+ - `detect_and_guess(self, img)`
+    - Attempts to detect and guess a card in the given image.
