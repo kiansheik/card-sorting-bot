@@ -63,8 +63,5 @@ Homes the GRBL device.
 ### calibrate_vacuum(self)
 Calibrates the vacuum sensor value, must be called when vacuum is off.
 
-### detect_card(self, x, y)
-Attempts to detect a card at the given x, y position.
-
-### detect_and_guess(self, img)
-Attempts to detect and guess a card in the given image.
+### detect_card(self, (row, col))
+Attempts to detect a card at the given stack id defined in the calibrations dict
