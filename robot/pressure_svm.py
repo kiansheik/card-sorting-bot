@@ -1,15 +1,7 @@
-import glob
-import json
-import time
-
-import cv2
 import numpy as np
-import serial
-from pyzbar import pyzbar
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from tqdm import tqdm
 
 SAMPLE_WINDOW_SIZE = 100
 

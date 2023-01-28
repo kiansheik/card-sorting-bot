@@ -1,15 +1,7 @@
-import glob
 import json
-import time
 
 import cv2
 import numpy as np
-import serial
-from pyzbar import pyzbar
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
-from sklearn.svm import SVC
-from tqdm import tqdm
 
 
 def crop_based_on_aruco(bbox, img):
@@ -75,20 +67,20 @@ def distance_from_target(bounding_box, target_point, real_tag_size=6.3):
 class ArucoLocator:
     def __init__(self, cap, calibration_json_file_path=None):
         self.cap = cap
-        self.distortion = False
+        self.undistort = False
         if calibration_json_file_path:
             with open(calibration_json_file_path) as f:
                 calib = json.load(f)
                 self.camera_matrix = np.array(calib["camera_matrix"])
                 self.dist_coeffs = np.array(calib["dist_coeff"])
-            self.distortion = True
+            self.undistort = True
 
     def get_aruco_bboxes(self, aruco_id=None):
         boxes = dict()
         ret, frame = self.cap.read()
         if not ret:
             return None
-        if self.distortion:
+        if self.undistort:
             frame = cv2.undistort(frame, self.camera_matrix, self.dist_coeffs)
             frame = cv2.flip(frame, 1)  # flip the image vertically
             frame = cv2.transpose(frame)
