@@ -1,0 +1,16 @@
+numpy
+scipy
+Pillow
+cython
+matplotlib
+scikit-image
+tensorflow>=2.0.0
+opencv-contrib-python
+h5py
+imgaug
+IPython[all]
+paddleocr
+python-Levenshtein
+paddlepaddle -i https://pypi.tuna.tsinghua.edu.cn/simple
+cairosvg
+pyzbar
