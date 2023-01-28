@@ -1,8 +1,10 @@
 import glob
 import time
+from random import uniform
 
 import aruco
 import cv2
+import numpy as np
 import pressure_svm as psvm
 import serial
 from mtg_card_detector import detect_and_guess
@@ -131,7 +133,7 @@ class GRBL_Controller:
         while (
             "Pn:" not in status or "Z" not in status[1:-1].split("Pn:")[1].split("|")[0]
         ):
-            self.step(2, "Z", "+")
+            self.step(6, "Z", "+")
             self.wait_till_ready()
             status = self.check_status(self.grbl)
         self.step(Z_STEP_OFF, "Z", "-")
@@ -250,19 +252,38 @@ class GRBL_Controller:
         self.wait_till_ready()
 
     def read_card(self, stack_id):
+        card_name = None
         _, _, aruco_id = self.calibrations[stack_id]
         bboxes, frame = self.aruco_locator.get_aruco_bboxes(aruco_id=aruco_id)
+        # Get the image dimensions
+        height, width = frame.shape[:2]
+
+        # Cut out the bottom 1/3 of the image
+        # frame = frame[: int(height * (5 / 11)), :]
         if aruco_id in bboxes.keys():
             box = bboxes[aruco_id]
             frame = aruco.crop_based_on_aruco(box, frame)
-        return detect_and_guess(frame)
+        res_frame, card_name = detect_and_guess(np.copy(frame))
+        if card_name is None:
+            # frame = cv2.transpose(frame)
+            # Flip the image
+            frame = cv2.flip(frame, -1)
+            res_frame, card_name = detect_and_guess(np.copy(frame))
+        return res_frame, card_name
 
-    def display_read_card(self, stack=(0, 0), go_to=True, offset=-50):
+    def display_read_card(self, stack=(0, 0), go_to=True, offset=-70):
         if go_to:
             self.align_stack(stack)
             self.go_to(y=offset, relative=True)
         self.wait_till_ready()
         frame, name = self.read_card(stack)
+        neg = -1
+        if name is None:
+            dist = 3
+            self.go_to(y=uniform(neg * 0.1, neg * dist), relative=True)
+            self.wait_till_ready()
+            neg *= -1
+            frame, name = self.read_card(stack)
         print("GUESSED NAME", name)
         cv2.imshow("Aruco Markers", frame)
         # Break the loop if the 'q' key is pressed
@@ -309,10 +330,7 @@ if __name__ == "__main__":
 
     print("Initializing")
     robot.init()
-    # print("Moving Card")
-    # robot.move_card((1, 1), (1, 2))
-    # time.sleep(2)
-    # robot.move_card((1, 2), (1, 1))
+    robot.display_read_card()
 
     print("Enter 'c' to return robot to home and exit...")
     breakpoint()

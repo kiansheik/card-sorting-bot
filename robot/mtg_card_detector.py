@@ -151,42 +151,6 @@ def draw_boxes(image, masks, class_ids, scores):
         top = best_guess[class_id]
         if top[0] < scores[i]:
             best_guess[class_id] = (scores[i], i)
-    for class_id, (score, i) in best_guess.items():
-        mask = masks[:, :, i]
-        label = OBJ_CLASSES[class_id - 1]
-        coords = bitmask_to_bounding_box(mask.astype(np.uint8))
-        cv2.polylines(image, [coords], True, (0, 0, 255), 2)
-    for class_id, (score, i) in best_guess.items():
-        mask = masks[:, :, i]
-        # class_id = class_ids[i]
-        label = OBJ_CLASSES[class_id - 1]
-        coords = bitmask_to_bounding_box(mask.astype(np.uint8))
-        x, y, w, h = cv2.boundingRect(coords)
-        center_x, center_y = x + w // 2, y + h // 2
-        # Convert the coordinates to a numpy array
-        coords = np.array(coords, dtype=np.int32)
-        # Add black border
-        cv2.putText(
-            image,
-            label,
-            (center_x, center_y),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 0, 0),
-            3,
-            cv2.LINE_AA,
-        )
-        # Put the label text on the image
-        cv2.putText(
-            image,
-            label,
-            (center_x, center_y),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (255, 255, 255),
-            2,
-            cv2.LINE_AA,
-        )
     card_name = None
     for class_id, (score, i) in best_guess.items():
         mask = masks[:, :, i]
@@ -336,7 +300,44 @@ def draw_boxes(image, masks, class_ids, scores):
             cropped_image = cv2.resize(cropped_image, dst_size)
             res = ocr.ocr(cropped_image, det=False, cls=False)
             card_name = fuzzy_search.match_card_name(res[0][0][0])
-
+            image = cropped_image
+            return image, card_name
+    for class_id, (score, i) in best_guess.items():
+        mask = masks[:, :, i]
+        label = OBJ_CLASSES[class_id - 1]
+        coords = bitmask_to_bounding_box(mask.astype(np.uint8))
+        cv2.polylines(image, [coords], True, (0, 0, 255), 2)
+    for class_id, (score, i) in best_guess.items():
+        mask = masks[:, :, i]
+        # class_id = class_ids[i]
+        label = OBJ_CLASSES[class_id - 1]
+        coords = bitmask_to_bounding_box(mask.astype(np.uint8))
+        x, y, w, h = cv2.boundingRect(coords)
+        center_x, center_y = x + w // 2, y + h // 2
+        # Convert the coordinates to a numpy array
+        coords = np.array(coords, dtype=np.int32)
+        # Add black border
+        cv2.putText(
+            image,
+            label,
+            (center_x, center_y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 0),
+            3,
+            cv2.LINE_AA,
+        )
+        # Put the label text on the image
+        cv2.putText(
+            image,
+            label,
+            (center_x, center_y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
     # Find top left corner as it's the closest to the farthest corner
     return image, card_name
 
