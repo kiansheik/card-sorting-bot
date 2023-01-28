@@ -193,7 +193,11 @@ def draw_boxes(image, masks, class_ids, scores):
         label = OBJ_CLASSES[class_id - 1]
         # class_id = class_ids[i]
         coords = bitmask_to_bounding_box(mask.astype(np.uint8))
-        if label == "name":
+        if (
+            label == "name"
+            and (OBJ_CLASSES.index("card") + 1) in best_guess.keys()
+            and (OBJ_CLASSES.index("set_symbol") + 1) in best_guess.keys()
+        ):
             card_mask = masks[:, :, best_guess[OBJ_CLASSES.index("card") + 1][1]]
             set_mask = masks[:, :, best_guess[OBJ_CLASSES.index("set_symbol") + 1][1]]
             card_coords = bitmask_to_bounding_box(card_mask.astype(np.uint8))
@@ -347,6 +351,8 @@ def detect_and_guess(image):
         mask = r["masks"][:, :, i]
         nm = reverse_resize_and_pad(mask.astype(np.uint8), orig_shape)
         resized_masks.append(nm)
+    if len(resized_masks) == 0:
+        return image, None
     r_masks = np.stack(resized_masks, axis=2)
     return draw_boxes(image, r_masks, r["class_ids"], r["scores"])
 

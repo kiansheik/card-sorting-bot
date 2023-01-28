@@ -30,14 +30,15 @@ def wait_till_on(ser):
 # Function to parse GRBL status and check for alarms
 def check_status(ser):
     serial_write(ser, "?")
-    status = ser.read_line().decode()
+    status = ser.readline().decode()
+    print(status)
     return status
 
 
 class GRBL_Controller:
     def __init__(self, grbl, arduino, cap):
-        self.grbl = arduino
-        self.arduino = grbl
+        self.grbl = grbl
+        self.arduino = arduino
         self.cap = cap
         self.calibrations = {
             # (stack_id) are the key
@@ -57,10 +58,14 @@ class GRBL_Controller:
 
     def init(self):
         self.wait_till_ready()
+        print("TEST RELEASE...")
         self.release()
+        print("HOME...")
         self.home()
+        print("CALIBRATE_VACUUM...")
         self.calibrate_vacuum()
         self.wait_till_ready()
+        print("INITIALIZED...")
 
     def deinit(self):
         self.go_to(0, 0, 0)
@@ -75,6 +80,7 @@ class GRBL_Controller:
     def wait_till_ready(self):
         while True:
             status = self.check_status(self.grbl)
+            print(status)
             if "Run" in status:
                 time.sleep(0.001)
             elif "Idle" in status:
@@ -149,9 +155,6 @@ class GRBL_Controller:
         self.step(4, "Y", "+")
         self.reset_zero()
 
-    # def align_stack(stack_id):
-    #     target_closest_aruco(self.cap, camera_matrix, dist_coeffs, stack_id)
-
     def calibrate_vacuum(self):
         serial_write(self.arduino, "CALIBRATE_VACUUM")
         status = ""
@@ -170,16 +173,20 @@ class GRBL_Controller:
         while "VACUUM_OFF" not in status:
             status += self.arduino.readline().decode()
 
-    def pick_up(self):
+    def pickup(self):
         # Home x
+        print("vac on")
         self.vacuum_on()
         self.wait_till_ready()
+        print("ready")
         self.step(60, "Z", "-")
         self.wait_till_ready()
-        time.sleep(0.5)
+        print("z moved, ready")
         while not self.card_on():
+            print("card not on")
             self.step(10, "Z", "-")
-        self.go_to(z=18)
+        print("card on")
+        self.go_to(z=22)
         self.wait_till_ready()
         self.go_to(z=0)
 
@@ -192,7 +199,7 @@ class GRBL_Controller:
 
     def card_on(self):
         subarray = []
-        serial_write(self.arduino, "CURRRENT()")
+        serial_write(self.arduino, "CURRENT")
         while True:
             line = self.arduino.readline().decode()
             if "FIN" in line.strip():
@@ -210,24 +217,23 @@ class GRBL_Controller:
     def move_card(self, stack_id_1, stack_id_2):
         self.align_stack(stack_id_1)
         self.wait_till_ready()
-        self.pick_up()
+        self.pickup()
         self.wait_till_ready()
         self.align_stack(stack_id_2)
         self.wait_till_ready()
         self.go_to(z=-60, relative=True)
         time.sleep(1000 / 1000)
-        # step(60, "Z", "-")
         self.wait_till_ready()
         self.release()
         self.go_to(z=0)
         self.wait_till_ready()
 
-    def target_closest_aruco(self, stack_id):
+    def align_stack(self, stack_id):
         initial_jog, aruco_target, aruco_id = self.calibrations[stack_id]
         self.go_to(x=initial_jog[0], y=initial_jog[1])
         self.wait_till_ready()
         bboxes, frame = self.aruco_locator.get_aruco_bboxes(aruco_id=aruco_id)
-        if len(bboxes) > 0:
+        if aruco_id in bboxes.keys():
             print("boxes", bboxes)
             print("aruco_target", aruco_target)
             x_dist, y_dist = aruco.distance_from_target(bboxes[aruco_id], aruco_target)
@@ -238,8 +244,6 @@ class GRBL_Controller:
                 self.go_to(x=x_dist, y=y_dist, relative=True)
                 self.wait_till_ready()
                 bboxes, frame = self.aruco_locator.get_aruco_bboxes(aruco_id=aruco_id)
-                # print('boxes', bboxes)
-                # print('aruco_target', aruco_target)
                 x_dist, y_dist = aruco.distance_from_target(
                     bboxes[aruco_id], aruco_target
                 )
@@ -247,13 +251,25 @@ class GRBL_Controller:
 
     def read_card(self, stack_id):
         _, _, aruco_id = self.calibrations[stack_id]
-        card_name = None
         bboxes, frame = self.aruco_locator.get_aruco_bboxes(aruco_id=aruco_id)
-        if len(bboxes) > 0:
+        if aruco_id in bboxes.keys():
             box = bboxes[aruco_id]
-            cropped = aruco.crop_based_on_aruco(box, frame)
-            _, card_name = detect_and_guess(cropped)
-        return card_name
+            frame = aruco.crop_based_on_aruco(box, frame)
+        return detect_and_guess(frame)
+
+    def display_read_card(self, stack=(0, 0), go_to=True, offset=-50):
+        if go_to:
+            self.align_stack(stack)
+            self.go_to(y=offset, relative=True)
+        self.wait_till_ready()
+        frame, name = self.read_card(stack)
+        print("GUESSED NAME", name)
+        cv2.imshow("Aruco Markers", frame)
+        # Break the loop if the 'q' key is pressed
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        if go_to:
+            self.go_to(y=-1 * offset, relative=True)
 
 
 if __name__ == "__main__":
@@ -275,8 +291,8 @@ if __name__ == "__main__":
                 elif "ARDUINO" in response:
                     arduino = ser
                     break
-        except Exception:
-            print("nothing", s)
+        except Exception as e:
+            print("nothing", s, e)
             pass
     # Raise an error if both grbl and arduino are not found
     if grbl is None or arduino is None:
@@ -291,11 +307,12 @@ if __name__ == "__main__":
 
     robot = GRBL_Controller(grbl, arduino, cap)
 
+    print("Initializing")
     robot.init()
-
-    robot.move_card((1, 1), (1, 2))
-    time.sleep(2)
-    robot.move_card((1, 2), (1, 1))
+    # print("Moving Card")
+    # robot.move_card((1, 1), (1, 2))
+    # time.sleep(2)
+    # robot.move_card((1, 2), (1, 1))
 
     print("Enter 'c' to return robot to home and exit...")
     breakpoint()

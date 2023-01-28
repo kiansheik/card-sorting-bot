@@ -16,8 +16,9 @@
     - Multimeter (or two)
     - A power supply with current limiting/constant current would be handy to calibrate the device without using resistors
 */
-#define BUFFER_SIZE 64
-#define VACUUM_PIN 10
+#define BUFFER_SIZE 64*2
+#define VACUUM_PIN 11
+#define SOLENOID_PIN 12
 char buffer[BUFFER_SIZE];
 int bufferIndex = 0;
 
@@ -37,8 +38,7 @@ float Vref = 2500; // Output voltage with no current: ~ 2500mV or 2.5V
 void setup() {
   // initialize serial communications at 9600 bps:
   Serial.begin(115200);
-  pinMode(12, OUTPUT);
-  pinMode(11, OUTPUT);
+  pinMode(SOLENOID_PIN, OUTPUT);
   pinMode(VACUUM_PIN, OUTPUT);
   calibrate_vacuum();
 }
@@ -84,14 +84,11 @@ void loop() {
 }
 
 void processData(char* data) {
-  bool normal = LOW;
   String input = String(data);
-    if (input.indexOf("RELEASE_PERM") > -1) {
-      digitalWrite(11, !normal);
-    } else if (input.indexOf("RELEASE") > -1) {
-      digitalWrite(11, !normal);
+    if (input.indexOf("RELEASE") > -1) {
+      digitalWrite(SOLENOID_PIN, HIGH);
       delay(900);
-      digitalWrite(11, normal);
+      digitalWrite(SOLENOID_PIN, LOW);
       Serial.println("RELEASED");
     } else if (input.indexOf("?") > -1) {
       Serial.println("ARDUINO");      
@@ -100,21 +97,11 @@ void processData(char* data) {
     } else if (input.indexOf("VACUUM_ON") > -1){
       digitalWrite(VACUUM_PIN, HIGH);
       Serial.println("VACUUM_ON");  
+      Serial.println("VACUUM_ON");  
     } else if (input.indexOf("VACUUM_OFF") > -1){
       digitalWrite(VACUUM_PIN, LOW);
       Serial.println("VACUUM_OFF");  
-    } else if (input.indexOf("SHAKE") > -1) {
-      int shakes = 2;
-      delay(600);
-      digitalWrite(11, !normal);
-      delay(500);
-      for (int i=0;i<shakes;i++){        
-        digitalWrite(11, !normal);
-        delay(450);
-        digitalWrite(11, normal);
-        delay(250);
-      }
-      Serial.println("SHOOK");      
+      Serial.println("VACUUM_OFF");  
     } else if (input.indexOf("CALIBRATE_VACUUM") > -1) {
         calibrate_vacuum();      
     }
