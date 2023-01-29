@@ -27,7 +27,7 @@ def check_status(ser):
 
 
 arduino = serial.Serial("/dev/tty.usbserial-1420", 115200)
-states = ("vacuum_off", "vacuum_on", "card_on")
+states = ("vacuum_off", "card_on")
 tl = (100 * 10) * 30
 for state in states:
     print(f"Set to state: {state} then press 'c'...")

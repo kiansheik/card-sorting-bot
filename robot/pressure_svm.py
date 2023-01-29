@@ -25,21 +25,21 @@ def store_integers_from_file(filepath):
 
 
 # Calibrate Current sensor SVM for detecting cards with readings from these 3 states
-vacuum_on_readings = store_integers_from_file("sig_dump_vacuum_on.txt")[1:-1]
+# vacuum_on_readings = store_integers_from_file("sig_dump_vacuum_on.txt")[1:-1]
 vacuum_off_readings = store_integers_from_file("sig_dump_vacuum_off.txt")[1:-1]
 vacuum_sucking_card_readings = store_integers_from_file("sig_dump_card_on.txt")[1:-1]
 
 # Create labels for the sensor readings
 vacuum_off_labels = [0] * len(vacuum_off_readings)
-vacuum_on_labels = [0] * len(vacuum_on_readings)
+# vacuum_on_labels = [0] * len(vacuum_on_readings)
 vacuum_sucking_card_labels = [1] * len(vacuum_sucking_card_readings)
 
 # Combine sensor readings and labels into a single dataset
 X = []
-for arr in (vacuum_off_readings, vacuum_on_readings, vacuum_sucking_card_readings):
+for arr in (vacuum_off_readings, vacuum_sucking_card_readings):
     for sub in arr:
         X.append(sub)
-y = np.concatenate((vacuum_off_labels, vacuum_on_labels, vacuum_sucking_card_labels))
+y = np.concatenate((vacuum_off_labels, vacuum_sucking_card_labels))
 
 # Split the dataset into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)

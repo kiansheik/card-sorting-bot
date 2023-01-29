@@ -46,6 +46,44 @@ def average_side_length(bounding_box):
     return average
 
 
+def equilateral_triangle_point(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+
+    # calculate slope of the line between the two points
+    if x1 == x2:
+        m = None
+    else:
+        m = (y2 - y1) / (x2 - x1)
+
+    # calculate slope of the perpendicular line
+    if m is None:
+        m_perp = 0
+    else:
+        m_perp = -1 / m
+
+    # calculate midpoint of the line between the two points
+    midpoint = ((x1 + x2) / 2, (y1 + y2) / 2)
+    dist = np.linalg.norm(np.array(point2) - np.array(point1)) * 0.3
+    # calculate the point that is a distance of sqrt(3) away from the midpoint
+    # along the perpendicular line
+    print("mperp", m_perp)
+    if m_perp == 0 or abs(m_perp) == float("inf"):
+        # print('slope 0')
+        x3 = midpoint[0]
+        y3 = midpoint[1] + dist
+    # elif m_perp == float('inf'):
+    #     print('slope inf')
+    #     x3 = midpoint[0] + dist
+    #     y3 = midpoint[1]
+    else:
+        # print('slope normal')
+        x3 = midpoint[0] + dist / np.sqrt(1 + m_perp**2)
+        y3 = midpoint[1] + abs(m_perp * (x3 - midpoint[0]))
+
+    return (int(x3), int(y3))
+
+
 def distance_from_target(bounding_box, target_point, real_tag_size=6.3):
     # Get the center of the bounding box
     center = (
@@ -64,6 +102,18 @@ def distance_from_target(bounding_box, target_point, real_tag_size=6.3):
     return x_distance_mm, -1 * y_distance_mm
 
 
+def get_real_distance(start_point, target_point, bounding_box, real_tag_size=6.3):
+    # Calculate the x and y distances between the target_point of the bounding box and the target point in pixels
+    x_distance = target_point[0] - start_point[0]
+    y_distance = target_point[1] - start_point[1]
+
+    # Convert the distance in pixels to millimeters using the real tag size
+    x_distance_mm = x_distance * real_tag_size / average_side_length(bounding_box)
+    y_distance_mm = y_distance * real_tag_size / average_side_length(bounding_box)
+
+    return -1 * x_distance_mm, y_distance_mm
+
+
 class ArucoLocator:
     def __init__(self, cap, calibration_json_file_path=None):
         self.cap = cap
@@ -75,7 +125,7 @@ class ArucoLocator:
                 self.dist_coeffs = np.array(calib["dist_coeff"])
             self.undistort = True
 
-    def get_aruco_bboxes(self, aruco_id=None):
+    def get_aruco_bboxes(self, aruco_ids=None):
         boxes = dict()
         ret, frame = self.cap.read()
         if not ret:
@@ -98,7 +148,7 @@ class ArucoLocator:
                 rect = cv2.minAreaRect(corner)
                 box = cv2.boxPoints(rect)
                 box = np.int0(box)
-                if aruco_id is None or aruco_id in ids[i]:
+                if aruco_ids is None or ids[i][0] in aruco_ids:
                     boxes[ids[i][0]] = box
         return boxes, frame
 
@@ -120,6 +170,29 @@ if __name__ == "__main__":
                 frame,
                 str(id),
                 center,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 255),
+                2,
+                cv2.LINE_AA,
+            )
+        if len(bboxes) == 2:
+            vals = list(bboxes.values())
+            center_1 = (
+                sum([x[0] for x in vals[0]]) // len(vals[0]),
+                sum([y[1] for y in vals[0]]) // len(vals[0]),
+            )
+            center_2 = (
+                sum([x[0] for x in vals[1]]) // len(vals[1]),
+                sum([y[1] for y in vals[1]]) // len(vals[1]),
+            )
+
+            center_card = equilateral_triangle_point(center_1, center_2)
+            print("target", center_card)
+            cv2.putText(
+                frame,
+                str("target"),
+                center_card,
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
                 (255, 255, 255),
