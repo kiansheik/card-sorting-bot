@@ -1,5 +1,5 @@
 lint:
-	isort .
+	isort --profile=black .
 	black .
 	flake8 .
 
