@@ -3,6 +3,9 @@ import json
 import cv2
 import numpy as np
 
+COLUMN_WIDTH = 71
+ROW_WIDTH = 96
+
 
 def crop_based_on_aruco(bbox, img):
     (x1, y1), (x2, y2), (x3, y3), (x4, y4) = bbox
@@ -22,7 +25,8 @@ def leftmost_highest(bboxes, img):
     leftmost_x = img.shape[1]  # Initialize with the maximum width of the image
     highest_y = img.shape[0]  # Initialize with the maximum height of the image
     leftmost_highest_bbox = None
-    for bbox in bboxes:
+    leftmost_highest_id = None
+    for aruco_id, bbox in bboxes.items():
         (x1, y1), (x2, y2), (x3, y3), (x4, y4) = bbox.reshape(-1, 2)
         x = min(x1, x2, x3, x4)
         y = min(y1, y2, y3, y4)
@@ -30,7 +34,8 @@ def leftmost_highest(bboxes, img):
             leftmost_x = x
             highest_y = y
             leftmost_highest_bbox = bbox
-    return leftmost_highest_bbox
+            leftmost_highest_id = aruco_id
+    return leftmost_highest_bbox, leftmost_highest_id
 
 
 def average_side_length(bounding_box):
@@ -151,6 +156,27 @@ class ArucoLocator:
                 if aruco_ids is None or ids[i][0] in aruco_ids:
                     boxes[ids[i][0]] = box
         return boxes, frame
+
+
+class ArucoMatrix:
+    # (3,3) (2,3) (1,3) (0,3)
+    # (3,2) (2,2) (1,2) (0,2)
+    # (3,1) (2,1) (1,1) (0,1)
+    # (3,0) (2,0) (1,0) (0,0)
+    def __init__(self, column_width=COLUMN_WIDTH, row_width=ROW_WIDTH):
+        self.upper_left_box_loc = {
+            y[-1][0]: (x[0] * column_width, x[1] * row_width)
+            for x, y in self.calibrations.items()
+        }
+
+    def dist_between_tags(self, start_id, target_id):
+        start_point = self.upper_left_box_loc[start_id]
+        target_point = self.upper_left_box_loc[target_id]
+        # Calculate the x and y distances between the center of the bounding box and the target point in pixels
+        x_distance_mm = start_point[0] - target_point[0]
+        y_distance_mm = start_point[1] - target_point[1]
+
+        return -1 * x_distance_mm, y_distance_mm
 
 
 # If ran directly, open main camera and locate aruco tags live, print bbox centers to terminal

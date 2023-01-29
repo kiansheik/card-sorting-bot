@@ -47,10 +47,10 @@ class GRBL_Controller:
         self.calibrations = {
             # (stack_id) are the key
             # Format: (stack_row, stack_col): [(stepper_mm_x, stepper_mm_y), (aruco_center_target_x, aruco_center_target_y), aruco_id]
-            (0, 0): [(-8.987, 81.909), [6, 16]],
-            (0, 1): [(-89.949, 82.903), [3, 6]],
-            (0, 2): [(-162.876, 83.897), [4, 3]],
-            (0, 3): [(-235.802, 86.891), [41, 4]],
+            (3, 0): [(-8.987, 81.909), [6, 16]],
+            (2, 0): [(-89.949, 82.903), [3, 6]],
+            (1, 0): [(-162.876, 83.897), [4, 3]],
+            (0, 0): [(-235.802, 86.891), [41, 4]],
             # (1, 0): [(-52.959, 181.817), (178, 662), 39],
             # (1, 1): [(-143.873, 183.817), (194, 677), 2],
             # (1, 2): [(-227.497, 186.824), (136, 704), 42],
@@ -59,6 +59,7 @@ class GRBL_Controller:
         self.aruco_locator = aruco.ArucoLocator(
             cap, "calibration_images/calibration.json"
         )
+        self.aruco_matrix = aruco.ArucoMatrix()
 
     def init(self):
         self.wait_till_ready()
@@ -69,7 +70,8 @@ class GRBL_Controller:
         print("CALIBRATE_VACUUM...")
         self.calibrate_vacuum()
         self.wait_till_ready()
-        self.stack_camera_alignment()
+        print("Aligning with first aruco tags...")
+        self.align_stack((0, 0))
         print("INITIALIZED...")
 
     def deinit(self):
@@ -298,6 +300,68 @@ class GRBL_Controller:
         x, y, _ = self.get_position()
         # Save current position for faster recall than saved calibration
         self.calibrations[stack_id][0] = (x, y)
+
+    # Running this assuming we are already over a stack, must move to stack in init
+    def align_stack_aruco(self, stack_id, try_limit=30):
+        aruco_ids = self.calibrations[stack_id][-1]
+        self.wait_till_ready()
+        bboxes, frame = self.aruco_locator.get_aruco_bboxes()
+        for i in range(try_limit):
+            if len(bboxes) > 2:
+                break
+            bboxes, frame = self.aruco_locator.get_aruco_bboxes()
+        _, leftm_id = aruco.leftmost_highest(bboxes, frame)
+        x_dist, y_dist = self.aruco_matrix.dist_between_tags(leftm_id, aruco_ids[0])
+        self.go_to(x=x_dist * 0.999, y=y_dist * 0.999, relative=True)
+        self.wait_till_ready()
+        if set(aruco_ids).issubset(set(bboxes.keys())):
+            print("boxes", bboxes)
+            box1 = bboxes[aruco_ids[0]]
+            box2 = bboxes[aruco_ids[1]]
+            center1 = (
+                sum([x[0] for x in box1]) // len(box1),
+                sum([y[1] for y in box1]) // len(box1),
+            )
+            center2 = (
+                sum([x[0] for x in box2]) // len(box2),
+                sum([y[1] for y in box2]) // len(box2),
+            )
+            aruco_target = aruco.equilateral_triangle_point(center1, center2)
+            x_dist, y_dist = aruco.get_real_distance(
+                aruco_target, SUCTION_CAMERA_POS, box1
+            )
+            while abs(x_dist + y_dist) > STACK_ALIGN_THRESH:
+                print(x_dist, y_dist)
+                self.go_to(x=x_dist * 0.75, y=y_dist * 0.75, relative=True)
+                self.wait_till_ready()
+                bboxes, frame = self.aruco_locator.get_aruco_bboxes(aruco_ids=aruco_ids)
+                cv2.imshow("Aruco Markers", frame)
+                # Break the loop if the 'q' key is pressed
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+                i = 0
+                while not set(aruco_ids).issubset(set(bboxes.keys())):
+                    if i > try_limit:
+                        self.wait_till_ready()
+                        return
+                    bboxes, _ = self.aruco_locator.get_aruco_bboxes(aruco_ids=aruco_ids)
+                    i += 1
+                box1 = bboxes[aruco_ids[0]]
+                box2 = bboxes[aruco_ids[1]]
+                center1 = (
+                    sum([x[0] for x in box1]) // len(box1),
+                    sum([y[1] for y in box1]) // len(box1),
+                )
+                center2 = (
+                    sum([x[0] for x in box2]) // len(box2),
+                    sum([y[1] for y in box2]) // len(box2),
+                )
+                aruco_target = aruco.equilateral_triangle_point(center1, center2)
+                x_dist, y_dist = aruco.get_real_distance(
+                    aruco_target, SUCTION_CAMERA_POS, box1
+                )
+        self.wait_till_ready()
+        # TODO: Save drift or new location in relation to each other in MM over the course of the sort to account for drift if needed, not sure if necessary
 
     def read_card(self, stack_id):
         card_name = None
